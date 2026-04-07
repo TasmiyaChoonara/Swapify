@@ -8,6 +8,7 @@ const {
   createListing,
   updateListing,
   deleteListing,
+  addListingImage,
 } = require('../controllers/listingController');
 
 const router = Router();
@@ -28,8 +29,9 @@ router.get('/',    getListings);
 router.get('/:id', getListing);
 
 // Auth required
-router.post('/',    ...protect, requireRole('student', 'staff', 'admin'), createListing);
-router.put('/:id',  ...protect, updateListing);
-router.delete('/:id', ...protect, deleteListing);
+router.post('/',           ...protect, requireRole('student', 'staff', 'admin'), createListing);
+router.post('/:id/images', ...protect, addListingImage);
+router.put('/:id',         ...protect, updateListing);
+router.delete('/:id',      ...protect, deleteListing);
 
 module.exports = router;

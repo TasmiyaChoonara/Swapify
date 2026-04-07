@@ -6,6 +6,7 @@ import Navbar from './components/Navbar'
 import Home from './pages/Home'
 import CreateListing from './pages/CreateListing'
 import ListingDetail from './pages/ListingDetail'
+import Admin from './pages/Admin'
 
 // Registers Clerk's getToken with the axios instance so every
 // authenticated request automatically gets a Bearer token.
@@ -27,6 +28,7 @@ export default function App() {
         <Route path="/"             element={<Home />} />
         <Route path="/listings/new" element={<CreateListing />} />
         <Route path="/listings/:id" element={<ListingDetail />} />
+        <Route path="/admin"        element={<Admin />} />
       </Routes>
     </BrowserRouter>
   )

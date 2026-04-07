@@ -1,8 +1,10 @@
 import { Link } from 'react-router-dom'
 import { SignInButton, SignUpButton, UserButton, useAuth } from '@clerk/clerk-react'
+import useRole from '../hooks/useRole'
 
 export default function Navbar() {
   const { isSignedIn } = useAuth()
+  const { isAdmin } = useRole()
 
   return (
     <nav className="navbar">
@@ -18,14 +20,13 @@ export default function Navbar() {
         <div className="navbar-links">
           <Link to="/" className="navbar-link">Home</Link>
 
-          {isSignedIn && (
-            <Link to="/listings/new" className="navbar-link">Sell Item</Link>
-          )}
-
           {isSignedIn ? (
             <>
+              {isAdmin && (
+                <Link to="/admin" className="navbar-link">Admin Panel</Link>
+              )}
               <Link to="/listings/new" className="btn btn-primary btn-sm">
-                + List Item
+                + Sell Item
               </Link>
               <UserButton afterSignOutUrl="/" />
             </>

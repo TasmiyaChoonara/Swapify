@@ -37,4 +37,11 @@ async function updateRole(id, role) {
   return rows[0] || null;
 }
 
-module.exports = { findByAuthId, findById, create, updateRole };
+async function findAll() {
+  const { rows } = await pool.query(
+    'SELECT * FROM users ORDER BY created_at DESC'
+  );
+  return rows;
+}
+
+module.exports = { findByAuthId, findById, findAll, create, updateRole };

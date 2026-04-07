@@ -1,17 +1,24 @@
 require('dotenv').config();
 const express = require('express');
+const cors = require('cors');
 const pool = require('./config/db');
 
 const usersRouter = require('./routes/users');
 const listingsRouter = require('./routes/listings');
+const pricesRouter = require('./routes/prices');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+app.use(cors({
+  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+  credentials: true,
+}));
 app.use(express.json());
 
 app.use('/api/users', usersRouter);
 app.use('/api/listings', listingsRouter);
+app.use('/api/prices', pricesRouter);
 
 app.get('/health', async (req, res) => {
   try {

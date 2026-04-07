@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { useParams, Link, useNavigate } from 'react-router-dom'
 import { useAuth, SignInButton } from '@clerk/clerk-react'
 import api from '../services/api'
+import useRole from '../hooks/useRole'
 
 const CONDITION_BADGE = { new: 'badge-green', good: 'badge-purple', fair: 'badge-yellow' }
 const TYPE_LABEL      = { sale: 'For Sale', trade: 'Trade only', both: 'Sale / Trade' }
@@ -16,11 +17,15 @@ function PageShell({ children }) {
 
 export default function ListingDetail() {
   const { id } = useParams()
+  const navigate = useNavigate()
   const { isSignedIn } = useAuth()
-  const [listing, setListing]   = useState(null)
-  const [mainImg, setMainImg]   = useState(null)
-  const [loading, setLoading]   = useState(true)
-  const [error, setError]       = useState(null)
+  const { isAdmin, userId } = useRole()
+  const [listing, setListing]     = useState(null)
+  const [mainImg, setMainImg]     = useState(null)
+  const [loading, setLoading]     = useState(true)
+  const [error, setError]         = useState(null)
+  const [deleting, setDeleting]   = useState(false)
+  const [deleteError, setDeleteError] = useState(null)
 
   useEffect(() => {
     setLoading(true)
@@ -42,12 +47,25 @@ export default function ListingDetail() {
     </PageShell>
   )
 
-  const { title, description, price, condition, type, category, images, created_at } = listing
+  async function handleDelete() {
+    if (!window.confirm('Are you sure you want to delete this listing? This cannot be undone.')) return
+    setDeleting(true)
+    setDeleteError(null)
+    try {
+      await api.delete(`/listings/${id}`)
+      navigate('/')
+    } catch (err) {
+      setDeleteError(err.response?.data?.error ?? 'Failed to delete listing.')
+      setDeleting(false)
+    }
+  }
+
+  const { title, description, price, condition, type, category, images, created_at, seller_id } = listing
   const thumbs = images ?? []
 
   const displayPrice = type === 'trade'
     ? 'Trade only'
-    : price != null ? `$${parseFloat(price).toFixed(2)}` : '—'
+    : price != null ? `R${parseFloat(price).toFixed(2)}` : '—'
 
   return (
     <PageShell>
@@ -157,6 +175,26 @@ export default function ListingDetail() {
               </>
             )}
           </div>
+
+          {/* Delete card — visible to owner or admin */}
+          {isSignedIn && (isAdmin || seller_id === userId) && (
+            <div className="detail-card" style={{ borderColor: 'rgba(239,68,68,.3)' }}>
+              <h3 style={{ color: 'var(--text)', marginBottom: '.5rem' }}>
+                {isAdmin && seller_id !== userId ? 'Admin Actions' : 'Manage Listing'}
+              </h3>
+              {deleteError && (
+                <p className="error-msg" style={{ marginBottom: '.75rem' }}>{deleteError}</p>
+              )}
+              <button
+                className="btn btn-outline btn-full btn-lg"
+                style={{ borderColor: 'rgb(239,68,68)', color: 'rgb(239,68,68)' }}
+                onClick={handleDelete}
+                disabled={deleting}
+              >
+                {deleting ? 'Deleting…' : 'Delete Listing'}
+              </button>
+            </div>
+          )}
 
         </div>
       </div>

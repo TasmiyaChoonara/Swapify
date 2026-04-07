@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '@clerk/clerk-react'
 import api from '../services/api'
@@ -64,7 +64,10 @@ export default function Home() {
           </p>
 
           {/* Search bar */}
-          <div className="search-bar">
+          <form
+            className="search-bar"
+            onSubmit={e => { e.preventDefault(); setSearch(search) }}
+          >
             <input
               type="text"
               placeholder="Search listings…"
@@ -72,16 +75,10 @@ export default function Home() {
               onChange={e => setSearch(e.target.value)}
               aria-label="Search listings"
             />
-            {isSignedIn ? (
-              <Link to="/listings/new" className="btn btn-primary search-btn">
-                + Sell Item
-              </Link>
-            ) : (
-              <button className="btn btn-primary search-btn" onClick={() => {}}>
-                Search
-              </button>
-            )}
-          </div>
+            <button type="submit" className="btn btn-primary search-btn">
+              Search
+            </button>
+          </form>
         </div>
       </section>
 

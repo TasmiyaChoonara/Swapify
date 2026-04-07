@@ -33,7 +33,7 @@ export default function ListingCard({ listing }) {
   const displayPrice = type === 'trade'
     ? 'Trade only'
     : price != null
-      ? `$${parseFloat(price).toFixed(2)}`
+      ? `R${parseFloat(price).toFixed(2)}`
       : null
 
   return (
