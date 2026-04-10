@@ -59,7 +59,7 @@ export default function Home() {
             <span>on Campus</span>
           </h1>
           <p className="hero-sub">
-            The fastest way to find textbooks, electronics, furniture and more —
+            The fastest way to find textbooks, electronics, furniture and more, 
             all from students at your university.
           </p>
 
@@ -74,7 +74,7 @@ export default function Home() {
             />
             {isSignedIn ? (
               <Link to="/listings/new" className="btn btn-primary search-btn">
-                + Sell Item
+                Search
               </Link>
             ) : (
               <button className="btn btn-primary search-btn" onClick={() => {}}>
