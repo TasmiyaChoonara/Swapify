@@ -56,12 +56,12 @@ async function updateListing(id, requesterId, data) {
   return listingModel.update(id, data);
 }
 
-async function deleteListing(id, requesterId) {
+async function deleteListing(id, requesterId, requesterRole) {
   const listing = await listingModel.findById(id);
   if (!listing) {
     throw Object.assign(new Error('Listing not found'), { status: 404 });
   }
-  if (listing.seller_id !== requesterId) {
+  if (requesterRole !== 'admin' && listing.seller_id !== requesterId) {
     throw Object.assign(new Error('Forbidden'), { status: 403 });
   }
 

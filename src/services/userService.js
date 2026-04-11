@@ -41,4 +41,23 @@ async function updateUserRole(id, role) {
   return user;
 }
 
-module.exports = { getOrCreateUser, getUserProfile, updateUserRole };
+async function getAllUsers() {
+  return userModel.findAll();
+}
+
+async function adminUpdateUserRole(targetId, role) {
+  if (!VALID_ROLES.includes(role)) {
+    const err = new Error(`Invalid role. Must be one of: ${VALID_ROLES.join(', ')}`);
+    err.status = 400;
+    throw err;
+  }
+  const user = await userModel.updateRole(targetId, role);
+  if (!user) {
+    const err = new Error('User not found');
+    err.status = 404;
+    throw err;
+  }
+  return user;
+}
+
+module.exports = { getOrCreateUser, getUserProfile, updateUserRole, getAllUsers, adminUpdateUserRole };

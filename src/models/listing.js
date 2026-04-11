@@ -96,4 +96,12 @@ async function remove(id) {
   return rowCount > 0;
 }
 
-module.exports = { findAll, findById, findBySeller, create, update, updateStatus, delete: remove };
+async function addImage(listingId, imageUrl) {
+  const { rows } = await pool.query(
+    `INSERT INTO listing_images (listing_id, image_url) VALUES ($1, $2) RETURNING *`,
+    [listingId, imageUrl]
+  );
+  return rows[0];
+}
+
+module.exports = { findAll, findById, findBySeller, create, update, updateStatus, addImage, delete: remove };
