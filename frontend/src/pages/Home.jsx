@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '@clerk/clerk-react'
 import api from '../services/api'
@@ -26,6 +26,7 @@ export default function Home() {
       .finally(() => setLoading(false))
   }, [applied])
 
+  // Filter listings locally by search term
   const filtered = search.trim()
     ? listings.filter(l => l.title.toLowerCase().includes(search.toLowerCase()))
     : listings
@@ -33,14 +34,23 @@ export default function Home() {
   function handleFilterChange(e) {
     setFilters(f => ({ ...f, [e.target.name]: e.target.value }))
   }
+
   function applyFilters(e) {
     e.preventDefault()
     setApplied({ ...filters })
   }
+
   function resetFilters() {
     setFilters(EMPTY_FILTERS)
     setApplied(EMPTY_FILTERS)
     setSearch('')
+  }
+
+  // Triggered by Search button or pressing Enter in the search input
+  function handleSearch(e) {
+    e.preventDefault()
+    // search state is already bound to the input via onChange,
+    // so filtered will update automatically — nothing extra needed
   }
 
   const hasActiveFilters = Object.values(applied).some(Boolean) || search.trim()
@@ -59,12 +69,12 @@ export default function Home() {
             <span>on Campus</span>
           </h1>
           <p className="hero-sub">
-            The fastest way to find textbooks, electronics, furniture and more, 
+            The fastest way to find textbooks, electronics, furniture and more,
             all from students at your university.
           </p>
 
-          {/* Search bar */}
-          <div className="search-bar">
+          {/* ── Search bar ── */}
+          <form className="search-bar" onSubmit={handleSearch}>
             <input
               type="text"
               placeholder="Search listings…"
@@ -72,16 +82,11 @@ export default function Home() {
               onChange={e => setSearch(e.target.value)}
               aria-label="Search listings"
             />
-            {isSignedIn ? (
-              <Link to="/listings/new" className="btn btn-primary search-btn">
-                Search
-              </Link>
-            ) : (
-              <button className="btn btn-primary search-btn" onClick={() => {}}>
-                Search
-              </button>
-            )}
-          </div>
+            <button type="submit" className="btn btn-primary search-btn">
+              Search
+            </button>
+          </form>
+
         </div>
       </section>
 
@@ -125,6 +130,15 @@ export default function Home() {
             )}
           </div>
         </form>
+
+        {/* ── Post a listing CTA ── */}
+        {isSignedIn && (
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '1rem' }}>
+            <Link to="/listings/new" className="btn btn-primary btn-sm">
+              + Post a Listing
+            </Link>
+          </div>
+        )}
 
         {/* ── Results header ── */}
         <div className="section-header">
