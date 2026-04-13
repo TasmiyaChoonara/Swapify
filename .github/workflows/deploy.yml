@@ -5,6 +5,10 @@ on:
     branches: [main]
   workflow_dispatch:
 
+permissions:
+  id-token: write
+  contents: read
+
 jobs:
   deploy-backend:
     name: Deploy Backend
@@ -26,24 +30,14 @@ jobs:
         run: npm run build
 
       - name: Login to Azure
-        uses: azure/login@v1
+        uses: azure/login@v2
         with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
+          client-id: fc3c94f2-643e-4e64-9d27-d4d98c1dcfc0
+          tenant-id: 4b1b908c-5582-4377-ba07-a36d65e34934
+          subscription-id: 916fa99b-99e2-451f-b6e4-af581c5abeae
 
       - name: Deploy to Azure App Service
         uses: azure/webapps-deploy@v2
         with:
-          app-name: ${{ secrets.AZURE_WEBAPP_NAME }}
+          app-name: Swapify
           package: .
-
-      - name: Set App Service environment variables
-        uses: azure/appservice-settings@v1
-        with:
-          app-name: ${{ secrets.AZURE_WEBAPP_NAME }}
-          app-settings-json: |
-            [
-              { "name": "NODE_ENV",         "value": "production",                       "slotSetting": false },
-              { "name": "PORT",             "value": "8080",                             "slotSetting": false },
-              { "name": "DATABASE_URL",     "value": "${{ secrets.DATABASE_URL }}",      "slotSetting": false },
-              { "name": "CLERK_SECRET_KEY", "value": "${{ secrets.CLERK_SECRET_KEY }}",  "slotSetting": false }
-            ]
