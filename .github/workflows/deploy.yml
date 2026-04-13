@@ -36,10 +36,10 @@ jobs:
           tenant-id: 4b1b908c-5582-4377-ba07-a36d65e34934
           subscription-id: 916fa99b-99e2-451f-b6e4-af581c5abeae
 
-      - name: Start App Service
-        run: az webapp start --resource-group swapify-rg --name Swapify
-
-      - name: Zip and deploy
+      - name: Deploy with az webapp up
         run: |
-          zip -r app.zip . --exclude "*.git*" --exclude "*.zip"
-          az webapp deploy --resource-group swapify-rg --name Swapify --src-path app.zip --type zip --async true
+          az webapp up \
+            --resource-group swapify-rg \
+            --name Swapify \
+            --runtime "NODE:22-lts" \
+            --os-type linux
