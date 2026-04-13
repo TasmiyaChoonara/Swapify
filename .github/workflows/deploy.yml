@@ -36,6 +36,9 @@ jobs:
           tenant-id: 4b1b908c-5582-4377-ba07-a36d65e34934
           subscription-id: 916fa99b-99e2-451f-b6e4-af581c5abeae
 
+      - name: Start App Service
+        run: az webapp start --resource-group swapify-rg --name Swapify
+
       - name: Deploy to Azure App Service
         uses: azure/webapps-deploy@v2
         with:
