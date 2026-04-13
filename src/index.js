@@ -10,8 +10,24 @@ const pricesRouter = require('./routes/prices');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+const ALLOWED_ORIGINS = [
+  'http://localhost:5173',
+  'http://localhost:4173',
+  ...(process.env.FRONTEND_URL ? [process.env.FRONTEND_URL] : []),
+];
+
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+  origin(origin, callback) {
+    // Allow server-to-server requests (no origin) and exact matches.
+    if (!origin || ALLOWED_ORIGINS.includes(origin)) {
+      return callback(null, true);
+    }
+    // Allow any Vercel preview deployment for this project.
+    if (/^https:\/\/swapify(-[a-z0-9-]+)?\.vercel\.app$/.test(origin)) {
+      return callback(null, true);
+    }
+    callback(new Error(`CORS: origin ${origin} not allowed`));
+  },
   credentials: true,
 }));
 app.use(express.json());
