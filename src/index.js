@@ -23,8 +23,8 @@ app.use(cors({
     if (!origin || ALLOWED_ORIGINS.includes(origin)) {
       return callback(null, true);
     }
-    // Allow any Vercel preview deployment for this project.
-    if (/^https:\/\/swapify(-[a-z0-9-]+)?\.vercel\.app$/.test(origin)) {
+    // Allow any Vercel deployment as a fallback when FRONTEND_URL is not set.
+    if (/^https:\/\/[a-z0-9-]+\.vercel\.app$/.test(origin)) {
       return callback(null, true);
     }
     callback(new Error(`CORS: origin ${origin} not allowed`));
