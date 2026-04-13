@@ -4,7 +4,7 @@ const cors = require('cors');
 const pool = require('./config/db');
 
 const usersRouter = require('./routes/users');
-// const listingsRouter = require('./routes/listings'); // TODO: add when listings route is implemented
+const listingsRouter = require('./routes/listings');
 const pricesRouter = require('./routes/prices');
 
 const app = express();
@@ -17,7 +17,7 @@ app.use(cors({
 app.use(express.json());
 
 app.use('/api/users', usersRouter);
-// app.use('/api/listings', listingsRouter); // TODO: uncomment when listings route is implemented
+app.use('/api/listings', listingsRouter);
 app.use('/api/prices', pricesRouter);
 
 app.get('/health', async (req, res) => {
