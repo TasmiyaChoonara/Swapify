@@ -2,7 +2,6 @@ name: CI
 
 on:
   push:
-<<<<<<< HEAD
     branches: [master, main]
   pull_request:
     branches: [master, main]
@@ -10,16 +9,6 @@ on:
 jobs:
   backend:
     name: Backend Tests
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-=======
-    branches: [main]
-  pull_request:
-    branches: [main]
-
-jobs:
-  test-and-build:
     runs-on: ubuntu-latest
 
     services:
@@ -38,25 +27,23 @@ jobs:
           --health-retries 5
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
->>>>>>> a71255b9f8383fadd5118c7f02d400e5abb0b6af
+      - uses: actions/checkout@v4
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-<<<<<<< HEAD
           cache: 'npm'
-=======
->>>>>>> a71255b9f8383fadd5118c7f02d400e5abb0b6af
 
       - name: Install dependencies
         run: npm install
 
       - name: Run tests
         run: npm test
-<<<<<<< HEAD
+        env:
+          PORT: 5000
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/campus_marketplace
+          CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
 
   frontend:
     name: Frontend Build
@@ -78,12 +65,3 @@ jobs:
       - name: Build
         working-directory: frontend
         run: npm run build
-=======
-        env:
-          PORT: 5000
-          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/campus_marketplace
-          CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
-
-      - name: Build check
-        run: cd frontend && npm install && npm run build
->>>>>>> a71255b9f8383fadd5118c7f02d400e5abb0b6af
