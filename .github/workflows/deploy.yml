@@ -39,8 +39,7 @@ jobs:
       - name: Start App Service
         run: az webapp start --resource-group swapify-rg --name Swapify
 
-      - name: Deploy to Azure App Service
-        uses: azure/webapps-deploy@v2
-        with:
-          app-name: Swapify
-          package: .
+      - name: Zip and deploy
+        run: |
+          zip -r app.zip . --exclude "*.git*" --exclude "*.zip"
+          az webapp deploy --resource-group swapify-rg --name Swapify --src-path app.zip --type zip --async true
