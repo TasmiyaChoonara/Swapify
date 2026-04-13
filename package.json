@@ -8,7 +8,8 @@
     "dev": "nodemon src/index.js",
     "test": "jest",
     "migrate": "node scripts/migrate.js",
-    "seed:prices": "node scripts/seedPrices.js"
+    "seed:prices": "node scripts/seedPrices.js",
+    "build": "cd frontend && npm install && npm run build"
   },
   "keywords": [],
   "author": "",
