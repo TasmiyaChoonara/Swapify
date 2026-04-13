@@ -22,7 +22,7 @@ app.use('/api/listings', listingsRouter);
 app.use('/api/prices', pricesRouter);
 
 app.use(express.static(path.join(__dirname, '../frontend/dist')));
-app.get('*', (req, res) => { res.sendFile(path.join(__dirname, '../frontend/dist/index.html')); });
+app.get('/{*path}', (req, res) => { res.sendFile(path.join(__dirname, '../frontend/dist/index.html')); });
 
 app.get('/health', async (req, res) => {
   try {
