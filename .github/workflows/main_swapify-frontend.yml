@@ -52,4 +52,4 @@ jobs:
           app-name: 'swapify-frontend'
           slot-name: 'Production'
           package: .
-          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_7E3DDAABAF854800843F59D4CC25529F }}
+          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_4318403B03684AB48D1642FA25FEA522 }}
