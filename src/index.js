@@ -22,11 +22,9 @@ const ALLOWED_ORIGINS = [
 
 app.use(cors({
   origin(origin, callback) {
-    // Allow server-to-server requests (no origin) and exact matches.
     if (!origin || ALLOWED_ORIGINS.includes(origin)) {
       return callback(null, true);
     }
-    // Allow any Vercel deployment as a fallback when FRONTEND_URL is not set.
     if (/^https:\/\/[a-z0-9-]+\.vercel\.app$/.test(origin)) {
       return callback(null, true);
     }
@@ -42,9 +40,6 @@ app.use('/api/prices', pricesRouter);
 app.use('/api/facility-config', facilityConfigRouter);
 app.use('/api/payments', paymentsRouter);
 
-app.use(express.static(path.join(__dirname, '../frontend/dist')));
-app.get('/{*path}', (req, res) => { res.sendFile(path.join(__dirname, '../frontend/dist/index.html')); });
-
 app.get('/health', async (req, res) => {
   try {
     await pool.query('SELECT 1');
@@ -53,6 +48,9 @@ app.get('/health', async (req, res) => {
     res.status(503).json({ status: 'error', db: 'disconnected', message: err.message });
   }
 });
+
+app.use(express.static(path.join(__dirname, '../frontend/dist')));
+app.get('/{*path}', (req, res) => { res.sendFile(path.join(__dirname, '../frontend/dist/index.html')); });
 
 async function start() {
   app.listen(PORT, () => {
