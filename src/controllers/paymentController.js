@@ -3,7 +3,7 @@ const paymentService = require('../services/paymentService');
 async function initiatePayment(req, res) {
   try {
     const { transactionId, totalPrice, onlineAmount } = req.body;
-    const result = await paymentService.initiatePayment({ transactionId, totalPrice, onlineAmount });
+    const result = await paymentService.initiatePayment({ transactionId, totalPrice, onlineAmount, listingId: req.body.listingId });
     res.status(201).json(result);
   } catch (err) {
     res.status(err.status || 500).json({ error: err.message });

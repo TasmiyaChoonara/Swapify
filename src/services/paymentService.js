@@ -2,7 +2,7 @@ const paymentModel = require('../models/payment');
 const paypalService = require('./paypalService');
 const pool = require('../config/db');
 
-async function initiatePayment({ transactionId, totalPrice, onlineAmount }) {
+async function initiatePayment({ transactionId, totalPrice, onlineAmount, listingId }) {
   const total = Number(totalPrice);
   const online = Number(onlineAmount);
 
@@ -37,7 +37,7 @@ async function initiatePayment({ transactionId, totalPrice, onlineAmount }) {
   let approvalUrl = null;
 
   if (online > 0) {
-    const order = await paypalService.createOrder(online);
+    const order = await paypalService.createOrder(online, 'USD', listingId ? `/listings/${listingId}` : '');
     paypalOrderId = order.id;
     approvalUrl = order.links.find((l) => l.rel === 'approve')?.href || null;
   }

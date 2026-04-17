@@ -1,4 +1,5 @@
 const BASE_URL = process.env.PAYPAL_BASE_URL || 'https://api-m.sandbox.paypal.com';
+const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5174';
 
 async function getAccessToken() {
   const credentials = Buffer.from(
@@ -23,7 +24,7 @@ async function getAccessToken() {
   return data.access_token;
 }
 
-async function createOrder(amount, currency = 'USD') {
+async function createOrder(amount, currency = 'USD', returnPath = '') {
   const token = await getAccessToken();
 
   const res = await fetch(`${BASE_URL}/v2/checkout/orders`, {
@@ -40,6 +41,10 @@ async function createOrder(amount, currency = 'USD') {
           value: Number(amount).toFixed(2),
         },
       }],
+      application_context: {
+        return_url: `${FRONTEND_URL}${returnPath}?paypal=success`,
+        cancel_url: `${FRONTEND_URL}${returnPath}?paypal=cancelled`,
+      },
     }),
   });
 
