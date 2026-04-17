@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { useAuth, SignInButton } from '@clerk/clerk-react'
 import api from '../services/api'
+import { initiatePayFastPayment, redirectToPayFast } from '../services/payfastService'
+import { initiatePayFastPayment, redirectToPayFast } from '../services/payfastService'
 import useRole from '../hooks/useRole'
 
 const CONDITION_BADGE = { new: 'badge-green', good: 'badge-purple', fair: 'badge-yellow' }
@@ -16,49 +18,22 @@ function PageShell({ children }) {
 }
 
 function PaymentPanel({ listing }) {
-  const [totalPrice]      = useState(parseFloat(listing.price ?? 0))
-  const [onlineAmount, setOnlineAmount] = useState(parseFloat(listing.price ?? 0))
-  const [cashShortfall, setCashShortfall] = useState(0)
-  const [loading, setLoading]   = useState(false)
-  const [error, setError]       = useState(null)
-  const [success, setSuccess]   = useState(null)
-
-  function handleOnlineChange(e) {
-    const val = parseFloat(e.target.value) || 0
-    const clamped = Math.min(val, totalPrice)
-    setOnlineAmount(clamped)
-    setCashShortfall(+(totalPrice - clamped).toFixed(2))
-  }
+  const [loading, setLoading] = useState(false)
+  const [error, setError]     = useState(null)
 
   async function handlePay() {
     setLoading(true)
     setError(null)
-    setSuccess(null)
     try {
-      const txRes = await api.post('/transactions', {
-        listingId: listing.id,
-        type: listing.type === 'trade' ? 'trade' : 'sale',
+      const result = await initiatePayFastPayment({
+        listingId:       listing.id,
+        amount:          listing.price,
+        itemName:        listing.title,
+        itemDescription: listing.description ?? '',
       })
-      const transactionId = txRes.data.id
-
-      const payRes = await api.post('/payments/initiate', {
-        transactionId,
-        totalPrice,
-        onlineAmount,
-        listingId: listing.id,
-      })
-
-      const { approvalUrl, cashShortfall: shortfall, paymentId } = payRes.data
-
-      if (approvalUrl) {
-        sessionStorage.setItem('swapify_payment', JSON.stringify({ paymentId, transactionId, listingId: listing.id }))
-        window.location.href = approvalUrl
-      } else {
-        setSuccess(`Payment recorded. Cash shortfall of R${shortfall} to be paid at the trade facility.`)
-      }
+      redirectToPayFast(result)
     } catch (err) {
-      setError(err.response?.data?.error ?? 'Payment failed. Please try again.')
-    } finally {
+      setError('Payment failed. Please try again.')
       setLoading(false)
     }
   }
@@ -67,101 +42,30 @@ function PaymentPanel({ listing }) {
     <div className="detail-card" style={{ borderColor: 'rgba(139,92,246,.3)' }}>
       <h3 style={{ color: 'var(--text)', marginBottom: '.25rem' }}>Buy This Item</h3>
       <p style={{ fontSize: '.8rem', color: 'var(--text-muted)', marginBottom: '1.25rem' }}>
-        Split your payment — pay part online via PayPal and the rest in cash at the trade facility.
+        Pay securely via PayFast — supports card, EFT, and more.
       </p>
-      <div style={{ marginBottom: '1rem' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '.85rem', marginBottom: '.4rem' }}>
-          <span style={{ color: 'var(--text-muted)' }}>Total price</span>
-          <span style={{ color: 'var(--text)', fontWeight: 600 }}>R{totalPrice.toFixed(2)}</span>
-        </div>
-        <label style={{ fontSize: '.85rem', color: 'var(--text-muted)', display: 'block', marginBottom: '.4rem' }}>
-          Online amount (PayPal)
-        </label>
-        <input
-          type="number"
-          min="0"
-          max={totalPrice}
-          step="0.01"
-          value={onlineAmount}
-          onChange={handleOnlineChange}
-          style={{
-            width: '100%',
-            padding: '.6rem .75rem',
-            borderRadius: 'var(--radius)',
-            border: '1px solid rgba(255,255,255,.12)',
-            background: 'rgba(255,255,255,.05)',
-            color: 'var(--text)',
-            fontSize: '.95rem',
-            boxSizing: 'border-box',
-            marginBottom: '.75rem',
-          }}
-        />
-        <div style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          fontSize: '.85rem',
-          padding: '.6rem .75rem',
-          borderRadius: 'var(--radius)',
-          background: cashShortfall > 0 ? 'rgba(251,191,36,.08)' : 'rgba(34,197,94,.08)',
-          border: cashShortfall > 0 ? '1px solid rgba(251,191,36,.2)' : '1px solid rgba(34,197,94,.2)',
-          marginBottom: '1rem',
-        }}>
-          <span style={{ color: 'var(--text-muted)' }}>Cash shortfall at facility</span>
-          <span style={{ fontWeight: 600, color: cashShortfall > 0 ? 'rgb(251,191,36)' : 'rgb(34,197,94)' }}>
-            R{cashShortfall.toFixed(2)}
-          </span>
-        </div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '.85rem', marginBottom: '1rem' }}>
+        <span style={{ color: 'var(--text-muted)' }}>Total price</span>
+        <span style={{ color: 'var(--text)', fontWeight: 600 }}>R{parseFloat(listing.price).toFixed(2)}</span>
       </div>
       {error && <p style={{ fontSize: '.85rem', color: 'rgb(239,68,68)', marginBottom: '.75rem' }}>{error}</p>}
-      {success && <p style={{ fontSize: '.85rem', color: 'rgb(34,197,94)', marginBottom: '.75rem' }}>{success}</p>}
       <button
         className="btn btn-primary btn-full btn-lg"
         onClick={handlePay}
         disabled={loading}
         style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '.5rem' }}
       >
-        {loading ? 'Processing...' : (onlineAmount > 0 ? `Pay R${onlineAmount.toFixed(2)} with PayPal` : 'Record Cash Payment')}
+        {loading ? 'Redirecting to PayFast...' : `Pay R${parseFloat(listing.price).toFixed(2)} with PayFast`}
       </button>
     </div>
   )
 }
 
 function PaymentCapture() {
-  const [status, setStatus] = useState('capturing')
-
-  useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search)
-    const paypalToken = urlParams.get('token')
-    const stored = sessionStorage.getItem('swapify_payment')
-
-    if (!paypalToken || !stored) { setStatus('error'); return }
-
-    const { paymentId } = JSON.parse(stored)
-    api.post('/payments/capture', { paymentId, paypalOrderId: paypalToken })
-      .then(() => {
-        sessionStorage.removeItem('swapify_payment')
-        setStatus('success')
-      })
-      .catch(() => setStatus('error'))
-  }, [])
-
-  if (status === 'capturing') return (
-    <div className="detail-card">
-      <div className="spinner" />
-      <p style={{ textAlign: 'center', marginTop: '1rem' }}>Confirming your payment...</p>
-    </div>
-  )
-
-  if (status === 'success') return (
-    <div className="detail-card" style={{ borderColor: 'rgba(34,197,94,.3)' }}>
-      <p style={{ color: 'rgb(34,197,94)', fontWeight: 600, marginBottom: '.5rem' }}>Payment confirmed!</p>
-      <p style={{ fontSize: '.875rem' }}>Your payment was successful. Check the trade facility for pickup details.</p>
-    </div>
-  )
-
   return (
-    <div className="detail-card" style={{ borderColor: 'rgba(239,68,68,.3)' }}>
-      <p style={{ color: 'rgb(239,68,68)', fontWeight: 600 }}>Payment could not be confirmed.</p>
+    <div className="detail-card" style={{ borderColor: 'rgba(34,197,94,.3)' }}>
+      <p style={{ color: 'rgb(34,197,94)', fontWeight: 600, marginBottom: '.5rem' }}>Payment successful!</p>
+      <p style={{ fontSize: '.875rem' }}>Your PayFast payment was completed. Check the trade facility for pickup details.</p>
     </div>
   )
 }
@@ -179,7 +83,7 @@ export default function ListingDetail() {
   const [deleteError, setDeleteError] = useState(null)
 
   const urlParams = new URLSearchParams(window.location.search)
-  const returningFromPayPal = urlParams.get('paypal') === 'success'
+  const returningFromPayFast = urlParams.get('payfast') === 'success'
 
   useEffect(() => {
     setLoading(true)
@@ -274,9 +178,9 @@ export default function ListingDetail() {
             </div>
           </div>
 
-          {returningFromPayPal && <PaymentCapture />}
+          {returningFromPayFast && <PaymentCapture />}
 
-          {isSignedIn && isBuyer && isForSale && !returningFromPayPal && (
+          {isSignedIn && isBuyer && isForSale && !returningFromPayFast && (
             <PaymentPanel listing={listing} />
           )}
 

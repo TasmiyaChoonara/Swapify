@@ -2,7 +2,7 @@ const { Router } = require('express');
 const auth = require('../middleware/auth');
 const requireRole = require('../middleware/roles');
 const userService = require('../services/userService');
-const { initiatePayment, capturePayment, getByTransaction } = require('../controllers/paymentController');
+const { initiatePayment, getByTransaction } = require('../controllers/paymentController');
 
 const router = Router();
 
@@ -18,7 +18,6 @@ async function attachDbUser(req, res, next) {
 router.use(auth, attachDbUser);
 
 router.post('/initiate', initiatePayment);
-router.post('/capture', capturePayment);
 router.get('/transaction/:transactionId', requireRole('staff', 'admin'), getByTransaction);
 
 module.exports = router;

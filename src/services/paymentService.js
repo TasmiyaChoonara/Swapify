@@ -1,28 +1,35 @@
 const paymentModel = require('../models/payment');
-const paypalService = require('./paypalService');
 const pool = require('../config/db');
+const crypto = require('crypto');
 
-async function initiatePayment({ transactionId, totalPrice, onlineAmount, listingId }) {
+const SANDBOX = process.env.PAYFAST_SANDBOX !== 'false';
+const PAYFAST_HOST = SANDBOX ? 'sandbox.payfast.co.za' : 'www.payfast.co.za';
+
+const PF = {
+  merchant_id:  process.env.PAYFAST_MERCHANT_ID  || '10000100',
+  merchant_key: process.env.PAYFAST_MERCHANT_KEY || '46f0cd694581a',
+  passphrase:   process.env.PAYFAST_PASSPHRASE   || '',
+};
+
+const BACKEND_URL  = process.env.BACKEND_URL  || 'https://swapify-backend.azurewebsites.net';
+const FRONTEND_URL = process.env.FRONTEND_URL || 'https://swapify-frontend-b2h7gvfhhgaka6d7.austriaeast-01.azurewebsites.net';
+
+function generateSignature(data, passphrase = '') {
+  let str = Object.entries(data)
+    .filter(([, v]) => v !== '' && v !== null && v !== undefined)
+    .map(([k, v]) => `${k}=${encodeURIComponent(String(v)).replace(/%20/g, '+')}`)
+    .join('&');
+  if (passphrase) str += `&passphrase=${encodeURIComponent(passphrase).replace(/%20/g, '+')}`;
+  return crypto.createHash('md5').update(str).digest('hex');
+}
+
+async function initiatePayment({ transactionId, totalPrice, listingId, itemName = 'Swapify Listing', nameFirst = '', nameLast = '', email = '' }) {
   const total = Number(totalPrice);
-  const online = Number(onlineAmount);
-
   if (isNaN(total) || total <= 0) {
     const err = new Error('totalPrice must be a positive number');
     err.status = 400;
     throw err;
   }
-  if (isNaN(online) || online < 0) {
-    const err = new Error('onlineAmount must be zero or a positive number');
-    err.status = 400;
-    throw err;
-  }
-  if (online > total) {
-    const err = new Error('onlineAmount cannot exceed totalPrice');
-    err.status = 400;
-    throw err;
-  }
-
-  const cashShortfall = +(total - online).toFixed(2);
 
   const { rows } = await pool.query('SELECT id FROM transactions WHERE id = $1', [transactionId]);
   if (!rows.length) {
@@ -31,40 +38,31 @@ async function initiatePayment({ transactionId, totalPrice, onlineAmount, listin
     throw err;
   }
 
-  const payment = await paymentModel.create({ transactionId, amount: total, onlineAmount: online, cashShortfall });
+  const payment = await paymentModel.create({ transactionId, amount: total, onlineAmount: total, cashShortfall: 0 });
+  const m_payment_id = `swapify-${listingId}-${payment.id}`;
 
-  let paypalOrderId = null;
-  let approvalUrl = null;
+  const paymentData = {
+    merchant_id:      PF.merchant_id,
+    merchant_key:     PF.merchant_key,
+    return_url:       `${FRONTEND_URL}/listings/${listingId}?payfast=success`,
+    cancel_url:       `${FRONTEND_URL}/listings/${listingId}?payfast=cancel`,
+    notify_url:       `${BACKEND_URL}/api/payfast/notify`,
+    name_first:       nameFirst,
+    name_last:        nameLast,
+    email_address:    email,
+    m_payment_id,
+    amount:           total.toFixed(2),
+    item_name:        itemName,
+  };
 
-  if (online > 0) {
-    const order = await paypalService.createOrder(online, 'USD', listingId ? `/listings/${listingId}` : '');
-    paypalOrderId = order.id;
-    approvalUrl = order.links.find((l) => l.rel === 'approve')?.href || null;
-  }
+  const clean = Object.fromEntries(Object.entries(paymentData).filter(([, v]) => v !== ''));
+  const signature = generateSignature(clean, PF.passphrase);
 
-  return { paymentId: payment.id, paypalOrderId, approvalUrl, cashShortfall };
-}
-
-async function capturePayment({ paymentId, paypalOrderId }) {
-  const payment = await paymentModel.findById(paymentId);
-  if (!payment) {
-    const err = new Error('Payment not found');
-    err.status = 404;
-    throw err;
-  }
-
-  if (payment.status === 'paid') return payment;
-
-  const capture = await paypalService.captureOrder(paypalOrderId);
-
-  if (capture.status !== 'COMPLETED') {
-    await paymentModel.markFailed(paymentId);
-    const err = new Error(`PayPal capture not completed. Status: ${capture.status}`);
-    err.status = 402;
-    throw err;
-  }
-
-  return paymentModel.markPaid(paymentId, paypalOrderId);
+  return {
+    paymentId: payment.id,
+    payfastUrl: `https://${PAYFAST_HOST}/eng/process`,
+    paymentData: { ...clean, signature },
+  };
 }
 
 async function getPaymentByTransaction(transactionId) {
@@ -77,4 +75,4 @@ async function getPaymentByTransaction(transactionId) {
   return payment;
 }
 
-module.exports = { initiatePayment, capturePayment, getPaymentByTransaction };
+module.exports = { initiatePayment, getPaymentByTransaction };

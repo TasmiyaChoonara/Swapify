@@ -10,6 +10,7 @@ const slotsRoutes = require("./routes/slots");
 const bookingsRoutes = require("./routes/bookings");
 const facilityConfigRouter = require('./routes/facilityConfig');
 const paymentsRouter = require('./routes/payments');
+const payfastRouter = require('./routes/payfast');
 const transactionsRouter = require('./routes/transactions');
 
 const app = express();
@@ -48,6 +49,7 @@ app.use("/api/slots", slotsRoutes);
 app.use("/api/bookings", bookingsRoutes);
 app.use('/api/facility-config', facilityConfigRouter);
 app.use('/api/payments', paymentsRouter);
+app.use('/api/payfast', payfastRouter);
 app.use('/api/transactions', transactionsRouter);
 
 app.get('/health', async (req, res) => {
