@@ -1,0 +1,45 @@
+name: Deploy to Azure
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy-backend:
+    name: Deploy Backend
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install backend dependencies
+        run: npm install --omit=dev
+
+      - name: Build frontend
+        run: npm run build
+
+      - name: Login to Azure
+        uses: azure/login@v2
+        with:
+          client-id: fc3c94f2-643e-4e64-9d27-d4d98c1dcfc0
+          tenant-id: 4b1b908c-5582-4377-ba07-a36d65e34934
+          subscription-id: 916fa99b-99e2-451f-b6e4-af581c5abeae
+
+      - name: Deploy with az webapp up
+        run: |
+          az webapp up \
+            --resource-group swapify-rg \
+            --name Swapify \
+            --runtime "NODE:22-lts" \
+            --os-type linux

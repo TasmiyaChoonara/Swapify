@@ -57,10 +57,7 @@ async function suggestPrice(category, item) {
   if (item && item.trim()) {
     const matched = await priceModel.findByCategoryAndItem(category, item.trim());
     if (matched.length > 0) {
-      // If only one row matches exactly enough, use it directly; otherwise aggregate
-      // the closest matches (sorted by median ASC by the model).
-      // Prefer the closest single match so a search for "laptop" doesn't pull
-      // in "laptop charger" and skew the range downwards.
+  
       const terms  = item.trim().toLowerCase().split(/\s+/)
       const scored = matched.map(r => {
         const name  = r.item_type.toLowerCase()

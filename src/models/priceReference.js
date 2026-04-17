@@ -31,10 +31,7 @@ async function findByCategoryAndItem(category, itemTerm) {
   return rows;
 }
 
-/**
- * Aggregate the whole category into a single min/median/max range.
- * Used when no specific item match is found.
- */
+
 async function getCategoryRange(category) {
   const { rows } = await pool.query(
     `SELECT

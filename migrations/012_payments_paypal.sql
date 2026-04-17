@@ -1,0 +1,3 @@
+ALTER TABLE payments
+  ADD COLUMN IF NOT EXISTS paypal_order_id VARCHAR(255),
+  ADD COLUMN IF NOT EXISTS online_amount DECIMAL(10, 2) DEFAULT 0;
