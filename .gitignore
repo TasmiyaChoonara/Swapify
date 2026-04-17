@@ -8,3 +8,6 @@ coverage/
 .DS_Storerelease.zip
 release2.zip
 .deployment
+release.zip
+deploy.zip
+.DS_Store
