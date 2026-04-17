@@ -1,6 +1,9 @@
 const express = require("express");
 const router = express.Router();
 const pool = require("../config/db");
+const auth = require("../middleware/auth");
+
+router.use(auth);
 
 const OPEN_HOUR = 8;
 const CLOSE_HOUR = 18;

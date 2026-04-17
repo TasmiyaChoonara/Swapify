@@ -1,7 +1,7 @@
 
 CREATE TABLE IF NOT EXISTS bookings (
     id SERIAL PRIMARY KEY,
-    trade_id INTEGER NOT NULL,
+    trade_id INTEGER NOT NULL REFERENCES transactions(id) ON DELETE CASCADE,
     buyer_id VARCHAR(255) NOT NULL,
     seller_id VARCHAR(255) NOT NULL,
     slot_time TIMESTAMP NOT NULL,
