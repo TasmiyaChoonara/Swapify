@@ -3,7 +3,6 @@ import { useParams, Link, useNavigate } from 'react-router-dom'
 import { useAuth, SignInButton } from '@clerk/clerk-react'
 import api from '../services/api'
 import { initiatePayFastPayment, redirectToPayFast } from '../services/payfastService'
-import { initiatePayFastPayment, redirectToPayFast } from '../services/payfastService'
 import useRole from '../hooks/useRole'
 
 const CONDITION_BADGE = { new: 'badge-green', good: 'badge-purple', fair: 'badge-yellow' }
