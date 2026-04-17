@@ -1,19 +1,14 @@
 jest.mock('../src/models/payment');
-jest.mock('../src/services/paypalService');
-
-// Mock the db pool before anything imports it
 jest.mock('../src/config/db', () => ({
   query: jest.fn(),
 }));
 
 const paymentModel = require('../src/models/payment');
-const paypalService = require('../src/services/paypalService');
 const pool = require('../src/config/db');
 const paymentService = require('../src/services/paymentService');
 
 const TRANSACTION_ID = 'txn-uuid-001';
 const PAYMENT_ID = 'pay-uuid-001';
-const PAYPAL_ORDER_ID = 'PP-ORDER-001';
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -23,73 +18,72 @@ beforeEach(() => {
 describe('paymentService.initiatePayment()', () => {
   test('throws 400 when totalPrice is zero', async () => {
     await expect(
-      paymentService.initiatePayment({ transactionId: TRANSACTION_ID, totalPrice: 0, onlineAmount: 0 })
+      paymentService.initiatePayment({ transactionId: TRANSACTION_ID, totalPrice: 0, listingId: '1', itemName: 'Test' })
     ).rejects.toMatchObject({ status: 400 });
   });
-  test('throws 400 when onlineAmount exceeds totalPrice', async () => {
+
+  test('throws 400 when totalPrice is negative', async () => {
     await expect(
-      paymentService.initiatePayment({ transactionId: TRANSACTION_ID, totalPrice: 100, onlineAmount: 150 })
+      paymentService.initiatePayment({ transactionId: TRANSACTION_ID, totalPrice: -50, listingId: '1', itemName: 'Test' })
     ).rejects.toMatchObject({ status: 400 });
   });
+
   test('throws 404 when transaction does not exist', async () => {
     pool.query.mockResolvedValue({ rows: [] });
     await expect(
-      paymentService.initiatePayment({ transactionId: 'bad-id', totalPrice: 100, onlineAmount: 50 })
+      paymentService.initiatePayment({ transactionId: 'bad-id', totalPrice: 100, listingId: '1', itemName: 'Test' })
     ).rejects.toMatchObject({ status: 404 });
   });
-  test('calculates cashShortfall correctly', async () => {
+
+  test('returns payfastUrl and paymentData on success', async () => {
     paymentModel.create.mockResolvedValue({ id: PAYMENT_ID, status: 'pending' });
-    paypalService.createOrder.mockResolvedValue({
-      id: PAYPAL_ORDER_ID,
-      links: [{ rel: 'approve', href: 'https://paypal.com/approve' }],
+    const result = await paymentService.initiatePayment({
+      transactionId: TRANSACTION_ID,
+      totalPrice: 100,
+      listingId: '1',
+      itemName: 'Test Item',
     });
-    const result = await paymentService.initiatePayment({ transactionId: TRANSACTION_ID, totalPrice: 500, onlineAmount: 300 });
-    expect(result.cashShortfall).toBe(200);
+    expect(result).toHaveProperty('payfastUrl');
+    expect(result).toHaveProperty('paymentData');
+    expect(result.paymentData).toHaveProperty('signature');
+    expect(result.paymentData.amount).toBe('100.00');
   });
-  test('skips PayPal when onlineAmount is 0', async () => {
-    paymentModel.create.mockResolvedValue({ id: PAYMENT_ID });
-    const result = await paymentService.initiatePayment({ transactionId: TRANSACTION_ID, totalPrice: 200, onlineAmount: 0 });
-    expect(paypalService.createOrder).not.toHaveBeenCalled();
-    expect(result.cashShortfall).toBe(200);
-  });
-  test('returns approvalUrl from PayPal', async () => {
-    paymentModel.create.mockResolvedValue({ id: PAYMENT_ID });
-    paypalService.createOrder.mockResolvedValue({
-      id: PAYPAL_ORDER_ID,
-      links: [{ rel: 'approve', href: 'https://paypal.com/approve' }],
+
+  test('paymentData contains correct merchant_id', async () => {
+    paymentModel.create.mockResolvedValue({ id: PAYMENT_ID, status: 'pending' });
+    const result = await paymentService.initiatePayment({
+      transactionId: TRANSACTION_ID,
+      totalPrice: 250,
+      listingId: '5',
+      itemName: 'Textbook',
     });
-    const result = await paymentService.initiatePayment({ transactionId: TRANSACTION_ID, totalPrice: 100, onlineAmount: 100 });
-    expect(result.approvalUrl).toBe('https://paypal.com/approve');
+    expect(result.paymentData.merchant_id).toBeDefined();
+    expect(result.paymentData.item_name).toBe('Textbook');
+  });
+
+  test('uses sandbox url when PAYFAST_SANDBOX is true', async () => {
+    paymentModel.create.mockResolvedValue({ id: PAYMENT_ID, status: 'pending' });
+    const result = await paymentService.initiatePayment({
+      transactionId: TRANSACTION_ID,
+      totalPrice: 100,
+      listingId: '1',
+      itemName: 'Test',
+    });
+    expect(result.payfastUrl).toContain('payfast.co.za');
   });
 });
 
-describe('paymentService.capturePayment()', () => {
+describe('paymentService.getPaymentByTransaction()', () => {
   test('throws 404 when payment not found', async () => {
-    paymentModel.findById.mockResolvedValue(null);
+    paymentModel.findByTransactionId.mockResolvedValue(null);
     await expect(
-      paymentService.capturePayment({ paymentId: 'bad', paypalOrderId: PAYPAL_ORDER_ID })
+      paymentService.getPaymentByTransaction('bad-txn')
     ).rejects.toMatchObject({ status: 404 });
   });
-  test('is idempotent when already paid', async () => {
-    paymentModel.findById.mockResolvedValue({ id: PAYMENT_ID, status: 'paid' });
-    const result = await paymentService.capturePayment({ paymentId: PAYMENT_ID, paypalOrderId: PAYPAL_ORDER_ID });
-    expect(paypalService.captureOrder).not.toHaveBeenCalled();
-    expect(result.status).toBe('paid');
-  });
-  test('marks failed when PayPal capture not COMPLETED', async () => {
-    paymentModel.findById.mockResolvedValue({ id: PAYMENT_ID, status: 'pending' });
-    paypalService.captureOrder.mockResolvedValue({ status: 'VOIDED' });
-    paymentModel.markFailed.mockResolvedValue({ id: PAYMENT_ID, status: 'failed' });
-    await expect(
-      paymentService.capturePayment({ paymentId: PAYMENT_ID, paypalOrderId: PAYPAL_ORDER_ID })
-    ).rejects.toMatchObject({ status: 402 });
-    expect(paymentModel.markFailed).toHaveBeenCalledWith(PAYMENT_ID);
-  });
-  test('marks paid on successful capture', async () => {
-    paymentModel.findById.mockResolvedValue({ id: PAYMENT_ID, status: 'pending' });
-    paypalService.captureOrder.mockResolvedValue({ status: 'COMPLETED' });
-    paymentModel.markPaid.mockResolvedValue({ id: PAYMENT_ID, status: 'paid', paypal_order_id: PAYPAL_ORDER_ID });
-    const result = await paymentService.capturePayment({ paymentId: PAYMENT_ID, paypalOrderId: PAYPAL_ORDER_ID });
-    expect(result.status).toBe('paid');
+
+  test('returns payment when found', async () => {
+    paymentModel.findByTransactionId.mockResolvedValue({ id: PAYMENT_ID, status: 'pending' });
+    const result = await paymentService.getPaymentByTransaction(TRANSACTION_ID);
+    expect(result.id).toBe(PAYMENT_ID);
   });
 });
