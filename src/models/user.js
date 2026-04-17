@@ -16,12 +16,12 @@ async function findById(id) {
   return rows[0] || null;
 }
 
-async function create({ name, email, authId }) {
+async function create({ name, email, authId, role = 'student' }) {
   const { rows } = await pool.query(
-    `INSERT INTO users (name, email, auth_id)
-     VALUES ($1, $2, $3)
+    `INSERT INTO users (name, email, auth_id, role)
+     VALUES ($1, $2, $3, $4)
      RETURNING *`,
-    [name, email, authId]
+    [name, email, authId, role]
   );
   return rows[0];
 }

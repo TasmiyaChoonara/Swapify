@@ -21,7 +21,7 @@ export default function Home() {
     setError(null)
     const params = Object.fromEntries(Object.entries(applied).filter(([, v]) => v !== ''))
     api.get('/listings', { params })
-      .then(res => setListings(res.data))
+      .then(res => setListings(Array.isArray(res.data) ? res.data : []))
       .catch(() => setError('Failed to load listings.'))
       .finally(() => setLoading(false))
   }, [applied])

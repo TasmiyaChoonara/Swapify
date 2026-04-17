@@ -16,20 +16,23 @@ const ALLOWED_ORIGINS = [
   ...(process.env.FRONTEND_URL ? [process.env.FRONTEND_URL] : []),
 ];
 
-app.use(cors({
+const corsOptions = {
   origin(origin, callback) {
-    // Allow server-to-server requests (no origin) and exact matches.
     if (!origin || ALLOWED_ORIGINS.includes(origin)) {
       return callback(null, true);
     }
-    // Allow any Vercel deployment as a fallback when FRONTEND_URL is not set.
     if (/^https:\/\/[a-z0-9-]+\.vercel\.app$/.test(origin)) {
       return callback(null, true);
     }
     callback(new Error(`CORS: origin ${origin} not allowed`));
   },
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true,
-}));
+};
+
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
 app.use(express.json());
 
 app.use('/api/users', usersRouter);
