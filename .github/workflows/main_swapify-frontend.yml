@@ -33,12 +33,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: frontend-dist
-          path: |
-            frontend/dist
-            frontend/server.js
-            frontend/package.json
-            frontend/package-lock.json
-            frontend/node_modules
+          path: frontend/dist
 
   deploy:
     runs-on: ubuntu-latest
