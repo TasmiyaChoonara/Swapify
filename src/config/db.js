@@ -7,14 +7,16 @@ if (process.env.NODE_ENV !== 'test' && !process.env.DATABASE_URL) {
 const pool = process.env.DATABASE_URL
   ? new Pool({
       connectionString: process.env.DATABASE_URL,
-      ...(process.env.NODE_ENV === 'production' && { ssl: { rejectUnauthorized: false } }),
+      ssl: { rejectUnauthorized: false },
+      connectionTimeoutMillis: 10000,
+      idleTimeoutMillis: 30000,
+      statement_timeout: 10000,
     })
   : null;
 
 if (pool) {
   pool.on('error', (err) => {
     console.error('Unexpected error on idle client', err);
-    process.exit(-1);
   });
 }
 
