@@ -7,6 +7,14 @@ const paymentModel = require('../src/models/payment');
 const pool = require('../src/config/db');
 const paymentService = require('../src/services/paymentService');
 
+beforeAll(() => {
+  process.env.PAYFAST_MERCHANT_ID  = '10000100';
+  process.env.PAYFAST_MERCHANT_KEY = '46f0cd694581a';
+  process.env.PAYFAST_PASSPHRASE   = 'testpassphrase';
+  process.env.BACKEND_URL          = 'http://localhost:3000';
+  process.env.FRONTEND_URL         = 'http://localhost:5173';
+});
+
 const TRANSACTION_ID = 'txn-uuid-001';
 const PAYMENT_ID = 'pay-uuid-001';
 
