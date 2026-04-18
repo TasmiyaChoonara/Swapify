@@ -27,9 +27,8 @@ function PaymentPanel({ listing }) {
     setError(null)
     try {
       const token = await getToken()
-      const txRes = await api.post('/transactions', { listingId: listing.id, type: 'purchase' })
       const result = await initiatePayFastPayment({
-        transactionId:   txRes.data.id,
+        transactionId:   listing.id,
         listingId:       listing.id,
         amount:          listing.price,
         itemName:        listing.title,
