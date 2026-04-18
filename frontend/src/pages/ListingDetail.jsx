@@ -80,7 +80,7 @@ function PaymentCapture() {
 export default function ListingDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const { isSignedIn } = useAuth()
+  const { isSignedIn, isLoaded } = useAuth()
   const { isAdmin, userId } = useRole()
   const [listing, setListing]     = useState(null)
   const [mainImg, setMainImg]     = useState(null)
@@ -187,7 +187,7 @@ export default function ListingDetail() {
 
           {returningFromPayFast && <PaymentCapture />}
 
-          {isSignedIn && isBuyer && isForSale && !returningFromPayFast && (
+          {isLoaded && isSignedIn && isBuyer && isForSale && !returningFromPayFast && (
             <PaymentPanel listing={listing} />
           )}
 
