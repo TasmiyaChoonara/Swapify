@@ -25,6 +25,7 @@ export default function Navbar() {
               {isAdmin && (
                 <Link to="/admin" className="navbar-link">Admin Panel</Link>
               )}
+              <Link to="/my-bookings" className="navbar-link">My Bookings</Link>
               <Link to="/listings/new" className="btn btn-primary btn-sm">
                 + Sell Item
               </Link>
