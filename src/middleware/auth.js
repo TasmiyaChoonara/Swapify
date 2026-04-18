@@ -1,6 +1,4 @@
-const { createClerkClient, verifyToken } = require('@clerk/backend');
-
-const clerk = createClerkClient({ secretKey: process.env.CLERK_SECRET_KEY });
+const { verifyToken } = require('@clerk/backend');
 
 async function auth(req, res, next) {
   const authHeader = req.headers.authorization;
@@ -16,12 +14,13 @@ async function auth(req, res, next) {
       return res.status(401).json({ error: 'Invalid token' });
     }
 
-    // Add timeout to Clerk API call
-    const clerkUser = await Promise.race([
-      clerk.users.getUser(userId),
-      new Promise((_, reject) => setTimeout(() => reject(new Error('Clerk API timeout')), 5000))
-    ]);
-    req.clerkUser = clerkUser;
+    // Build clerkUser from JWT payload directly - no API call needed
+    req.clerkUser = {
+      id: userId,
+      emailAddresses: payload.email ? [{ emailAddress: payload.email }] : [],
+      firstName: payload.first_name || '',
+      lastName: payload.last_name || '',
+    };
     req.authId = userId;
     next();
   } catch (err) {
