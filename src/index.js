@@ -42,6 +42,7 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 app.use(express.json());
+app.use((req, res, next) => { console.log(req.method, req.path); next(); });
 
 app.use('/api/users', usersRouter);
 app.use('/api/listings', listingsRouter);
