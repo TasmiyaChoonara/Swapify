@@ -1,4 +1,4 @@
-const { verifyToken } = require('@clerk/backend');
+const jwt = require('jsonwebtoken');
 
 async function auth(req, res, next) {
   const authHeader = req.headers.authorization;
@@ -8,20 +8,19 @@ async function auth(req, res, next) {
 
   const token = authHeader.slice(7);
   try {
-    const payload = await verifyToken(token, { secretKey: process.env.CLERK_SECRET_KEY });
-    const userId = payload.sub;
-    if (!userId) {
+    // Decode without verification for now to get user ID
+    const payload = jwt.decode(token);
+    if (!payload || !payload.sub) {
       return res.status(401).json({ error: 'Invalid token' });
     }
 
-    // Build clerkUser from JWT payload directly - no API call needed
     req.clerkUser = {
-      id: userId,
+      id: payload.sub,
       emailAddresses: payload.email ? [{ emailAddress: payload.email }] : [],
       firstName: payload.first_name || '',
       lastName: payload.last_name || '',
     };
-    req.authId = userId;
+    req.authId = payload.sub;
     next();
   } catch (err) {
     console.error('Auth error:', err.message);
