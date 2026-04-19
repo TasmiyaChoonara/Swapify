@@ -79,11 +79,16 @@ export default function ListingDetail() {
   // 🔥 CREATE CHAT THREAD
   const startChat = async () => {
     setChatError(null);
+        if (!isSignedIn) {
+  setChatError("You must be signed in to message the seller.");
+  return;
+}
 
-    if (!userId) {
-      setChatError("You must be signed in to message the seller.");
-      return;
-    }
+if (!userId) {
+  setChatError("Still loading your profile, please try again.");
+  return;
+}
+ 
 
     try {
       const res = await api.post("/threads", {
@@ -118,9 +123,9 @@ export default function ListingDetail() {
 
       {/* MESSAGE SELLER */}
       <div className="detail-card">
-        <button onClick={startChat} disabled={roleLoading}>
-          💬 {roleLoading ? 'Loading...' : 'Message Seller'}
-        </button>
+    <button onClick={startChat} disabled={!isLoaded || roleLoading}>
+  💬 {(!isLoaded || roleLoading) ? 'Loading...' : 'Message Seller'}
+</button>
         {chatError && <p style={{ color: 'red', marginTop: '0.5rem' }}>{chatError}</p>}
       </div>
 
