@@ -59,7 +59,7 @@ function validateWithPayFast(postData, payfastHost) {
   });
 }
 
-router.post('/initiate', auth, async (req, res) => {
+router.post(`/initiate`, async (req, res) => {
   try {
     const { PAYFAST_HOST, PF, BACKEND_URL, FRONTEND_URL } = getConfig();
     const { transactionId, listingId, amount, itemName, itemDescription = '', nameFirst = '', nameLast = '', email = '' } = req.body;
