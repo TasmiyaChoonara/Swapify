@@ -13,7 +13,20 @@ async function attachDbUser(req, res, next) {
     res.status(500).json({ error: 'Failed to resolve user', message: err.message });
   }
 }
+ router.get('/', async (req, res) => {
+  try {
+    const { listing_id } = req.query;
+    if (!listing_id) return res.status(400).json({ error: 'listing_id is required' });
 
+    const { rows } = await pool.query(
+      `SELECT * FROM transactions WHERE listing_id = $1 AND buyer_id = $2`,
+      [listing_id, req.user.id]
+    );
+    res.json(rows);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 router.use(auth, attachDbUser);
 
 router.post('/', async (req, res) => {
