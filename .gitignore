@@ -1,0 +1,13 @@
+node_modules/
+logs/
+tmp/
+dist/
+coverage/
+.env
+.env.test
+.DS_Storerelease.zip
+release2.zip
+.deployment
+release.zip
+deploy.zip
+.DS_Store
