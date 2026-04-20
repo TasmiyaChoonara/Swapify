@@ -1,4 +1,5 @@
-const jwt = require('jsonwebtoken');
+const { createClerkClient, verifyToken } = require('@clerk/backend');
+const clerk = createClerkClient({ secretKey: process.env.CLERK_SECRET_KEY });
 
 async function auth(req, res, next) {
   const authHeader = req.headers.authorization;
@@ -8,21 +9,15 @@ async function auth(req, res, next) {
 
   const token = authHeader.slice(7);
   try {
-    const payload = jwt.decode(token);
-    if (!payload || !payload.sub) {
-      return res.status(401).json({ error: 'Invalid token' });
-    }
+    const payload = await verifyToken(token, { secretKey: process.env.CLERK_SECRET_KEY });
+    const userId = payload.sub;
+    if (!userId) return res.status(401).json({ error: 'Invalid token' });
 
-    req.clerkUser = {
-      id: payload.sub,
-      emailAddresses: payload.email ? [{ emailAddress: payload.email }] : [],
-      firstName: payload.first_name || '',
-      lastName: payload.last_name || '',
-    };
-    req.authId = payload.sub;
+    const clerkUser = await clerk.users.getUser(userId);
+    req.clerkUser = clerkUser;
+    req.authId = userId;
     next();
   } catch (err) {
-    console.error('Auth error:', err.message);
     return res.status(401).json({ error: 'Unauthorized', message: err.message });
   }
 }

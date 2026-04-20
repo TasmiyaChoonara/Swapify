@@ -7,7 +7,7 @@ async function getOrCreateUser(clerkUser) {
   const existing = await userModel.findByAuthId(authId);
   if (existing) return existing;
 
-  const email = clerkUser.emailAddresses?.[0]?.emailAddress;
+  const email = clerkUser.emailAddresses?.[0]?.emailAddress || `${authId}@placeholder.com`;
   const firstName = clerkUser.firstName || '';
   const lastName = clerkUser.lastName || '';
   const name = `${firstName} ${lastName}`.trim() || email;
