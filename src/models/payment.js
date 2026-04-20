@@ -23,13 +23,13 @@ async function create({ transactionId, amount, onlineAmount, cashShortfall }) {
   return rows[0];
 }
 
-async function markPaid(id, paypalOrderId) {
+async function markPaid(id, pfPaymentId) {
   const { rows } = await pool.query(
     `UPDATE payments
-     SET status = 'paid', paypal_order_id = $2, paid_at = NOW(), updated_at = NOW()
+     SET status = 'paid', paid_at = NOW(), updated_at = NOW()
      WHERE id = $1
      RETURNING *`,
-    [id, paypalOrderId]
+    [id]
   );
   return rows[0] || null;
 }

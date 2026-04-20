@@ -1,53 +1,56 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
+import api from "../services/api";
 
 export default function Chat({ threadId, userId }) {
   const [messages, setMessages] = useState([]);
   const [content, setContent] = useState("");
   const [loading, setLoading] = useState(true);
+  const [sending, setSending] = useState(false);
+  const bottomRef = useRef(null);
 
-  // 🔄 Load messages when thread changes
+  const fetchMessages = async () => {
+    if (!threadId) return;
+    try {
+      const res = await api.get(`/messages/${threadId}`);
+      setMessages(res.data);
+    } catch (err) {
+      console.error("Error loading messages:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (!threadId) return;
-
-    const fetchMessages = async () => {
-      try {
-        const res = await fetch(`http://localhost:3000/api/messages/${threadId}`);
-        const data = await res.json();
-        setMessages(data);
-        setLoading(false);
-      } catch (err) {
-        console.error("Error loading messages:", err);
-      }
-    };
-
     fetchMessages();
+    // Poll every 3 seconds so both sides see new messages
+    const interval = setInterval(fetchMessages, 3000);
+    return () => clearInterval(interval);
   }, [threadId]);
 
-  // 📤 Send message
+  // Scroll to bottom when messages change
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
   const sendMessage = async () => {
-    if (!content.trim()) return;
-
+    if (!content.trim() || sending) return;
+    setSending(true);
     try {
-      await fetch("http://localhost:3000/api/messages", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          threadId,
-          senderId: userId,
-          content,
-        }),
-      });
-
-      // 🔄 Reload messages after sending
-      const res = await fetch(`http://localhost:3000/api/messages/${threadId}`);
-      const data = await res.json();
-      setMessages(data);
-
+      await api.post("/messages", { threadId, content });
       setContent("");
+      await fetchMessages();
     } catch (err) {
       console.error("Error sending message:", err);
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
     }
   };
 
@@ -57,14 +60,13 @@ export default function Chat({ threadId, userId }) {
 
   return (
     <div style={styles.container}>
-      <h3>Chat</h3>
+      <h3 style={{ margin: "0 0 10px", fontSize: "1rem" }}>Chat</h3>
 
-      {/* Messages */}
       <div style={styles.messages}>
         {loading ? (
-          <p>Loading...</p>
+          <p style={{ color: "#888", fontSize: "0.85rem" }}>Loading...</p>
         ) : messages.length === 0 ? (
-          <p>No messages yet</p>
+          <p style={{ color: "#888", fontSize: "0.85rem" }}>No messages yet. Say hello!</p>
         ) : (
           messages.map((msg) => (
             <div
@@ -72,28 +74,30 @@ export default function Chat({ threadId, userId }) {
               style={{
                 ...styles.message,
                 alignSelf: msg.sender_id === userId ? "flex-end" : "flex-start",
-                backgroundColor:
-                  msg.sender_id === userId ? "#DCF8C6" : "#EEE",
+                backgroundColor: msg.sender_id === userId ? "#DCF8C6" : "#EEE",
               }}
             >
-              <p>{msg.content}</p>
-              <small>{new Date(msg.created_at).toLocaleTimeString()}</small>
+              <p style={{ margin: 0, fontSize: "0.9rem" }}>{msg.content}</p>
+              <small style={{ color: "#888", fontSize: "0.7rem" }}>
+                {new Date(msg.created_at).toLocaleTimeString()}
+              </small>
             </div>
           ))
         )}
+        <div ref={bottomRef} />
       </div>
 
-      {/* Input */}
       <div style={styles.inputContainer}>
         <input
           type="text"
           placeholder="Type a message..."
           value={content}
           onChange={(e) => setContent(e.target.value)}
+          onKeyDown={handleKeyDown}
           style={styles.input}
         />
-        <button onClick={sendMessage} style={styles.button}>
-          Send
+        <button onClick={sendMessage} disabled={sending} style={styles.button}>
+          {sending ? "..." : "Send"}
         </button>
       </div>
     </div>
@@ -103,8 +107,8 @@ export default function Chat({ threadId, userId }) {
 const styles = {
   container: {
     border: "1px solid #ccc",
-    padding: "10px",
-    width: "300px",
+    borderRadius: "8px",
+    padding: "12px",
     display: "flex",
     flexDirection: "column",
   },
@@ -113,24 +117,33 @@ const styles = {
     overflowY: "auto",
     display: "flex",
     flexDirection: "column",
-    gap: "5px",
+    gap: "6px",
     marginBottom: "10px",
+    padding: "4px",
   },
   message: {
-    padding: "8px",
+    padding: "8px 12px",
     borderRadius: "10px",
-    maxWidth: "70%",
+    maxWidth: "75%",
   },
   inputContainer: {
     display: "flex",
-    gap: "5px",
+    gap: "6px",
   },
   input: {
     flex: 1,
-    padding: "5px",
+    padding: "8px",
+    borderRadius: "6px",
+    border: "1px solid #ccc",
+    fontSize: "0.9rem",
   },
   button: {
-    padding: "5px 10px",
+    padding: "8px 14px",
     cursor: "pointer",
+    borderRadius: "6px",
+    border: "none",
+    background: "#7C3AED",
+    color: "white",
+    fontWeight: "bold",
   },
 };

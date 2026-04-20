@@ -12,7 +12,9 @@ const getMessages = async (req, res) => {
 
 const sendMessage = async (req, res) => {
   try {
-    const { threadId, senderId, content } = req.body;
+    const { threadId, content } = req.body;
+    // Always derive senderId from the authenticated user — never trust the client
+    const senderId = req.user.id;
     const message = await messageService.sendMessage(threadId, senderId, content);
     res.json(message);
   } catch (err) {

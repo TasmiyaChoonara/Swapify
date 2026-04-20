@@ -12,6 +12,7 @@ async function attachDbUser(req, res, next) {
     req.user = await userService.getOrCreateUser(req.clerkUser);
     next();
   } catch (err) {
+    console.error('attachDbUser error:', err);
     res.status(500).json({ error: 'Failed to resolve user', message: err.message });
   }
 }

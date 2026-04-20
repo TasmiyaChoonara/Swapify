@@ -69,41 +69,53 @@ export default function ListingDetail() {
   const [loading, setLoading] = useState(true);
   const [threadId, setThreadId] = useState(null);
   const [chatError, setChatError] = useState(null);
-
+  
   useEffect(() => {
     api.get(`/listings/${id}`)
       .then(res => setListing(res.data))
       .finally(() => setLoading(false));
   }, [id]);
+  useEffect(() => {
+  if (!listing || !userId || !isSignedIn) return;
+  if (listing.seller_id !== userId) return;
+
+  api.get(`/threads/listing/${listing.id}`)
+    .then(res => {
+      if (res.data && res.data.length > 0) {
+        setThreadId(res.data[0].id);
+      }
+    })
+    .catch(() => {});
+}, [listing, userId, isSignedIn]);
 
   // 🔥 CREATE CHAT THREAD
   const startChat = async () => {
-    setChatError(null);
-        if (!isSignedIn) {
-  setChatError("You must be signed in to message the seller.");
-  return;
-}
+  setChatError(null);
+  if (!isSignedIn) {
+    setChatError("You must be signed in to message the seller.");
+    return;
+  }
+  if (!userId) {
+    setChatError("Still loading your profile, please try again.");
+    return;
+  }
 
-if (!userId) {
-  setChatError("Still loading your profile, please try again.");
-  return;
-}
- 
+  const isSeller = listing.seller_id === userId;
 
-    try {
-      const res = await api.post("/threads", {
-        listingId: listing.id,
-        buyerId: userId,
-        sellerId: listing.seller_id,
-      });
+  try {
+    const res = await api.post("/threads", {
+      listingId: listing.id,
+      buyerId: isSeller ? null : userId,
+      sellerId: listing.seller_id,
+    });
 
-      if (!res.data?.id) throw new Error("No thread ID returned from server.");
-      setThreadId(res.data.id);
-    } catch (err) {
-      console.error("Chat error:", err);
-      setChatError(err.response?.data?.error ?? err.message ?? "Failed to open chat.");
-    }
-  };
+    if (!res.data?.id) throw new Error("No thread ID returned from server.");
+    setThreadId(res.data.id);
+  } catch (err) {
+    console.error("Chat error:", err);
+    setChatError(err.response?.data?.error ?? err.message ?? "Failed to open chat.");
+  }
+};
 
   if (loading) return <PageShell>Loading...</PageShell>;
   if (!listing) return <PageShell>Not found</PageShell>;
@@ -120,15 +132,24 @@ if (!userId) {
 
       {/* PAYMENT */}
       {isBuyer && isForSale && <PaymentPanel listing={listing} />}
-
-      {/* MESSAGE SELLER */}
-      <div className="detail-card">
+      {/* SELLER VIEW - show incoming messages */}
+{isSignedIn && listing.seller_id === userId && (
+  <div className="detail-card">
     <button onClick={startChat} disabled={!isLoaded || roleLoading}>
-  💬 {(!isLoaded || roleLoading) ? 'Loading...' : 'Message Seller'}
-</button>
-        {chatError && <p style={{ color: 'red', marginTop: '0.5rem' }}>{chatError}</p>}
-      </div>
-
+      💬 {(!isLoaded || roleLoading) ? 'Loading...' : 'View Messages'}
+    </button>
+    {chatError && <p style={{ color: 'red', marginTop: '0.5rem' }}>{chatError}</p>}
+  </div>
+)}
+      {/* MESSAGE SELLER - only show to buyers, not the seller themselves */}
+{isBuyer && (
+  <div className="detail-card">
+    <button onClick={startChat} disabled={!isLoaded || roleLoading}>
+      💬 {(!isLoaded || roleLoading) ? 'Loading...' : 'Message Seller'}
+    </button>
+    {chatError && <p style={{ color: 'red', marginTop: '0.5rem' }}>{chatError}</p>}
+  </div>
+)}
       {/* CHAT BOX */}
       {threadId && (
         <div className="detail-card">
