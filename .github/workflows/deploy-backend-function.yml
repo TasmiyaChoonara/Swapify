@@ -1,14 +1,10 @@
-name: Build and deploy backend to Azure Function App - swapify-api-func
+name: Build and deploy backend Node.js app
 
 on:
   push:
     branches:
       - main
   workflow_dispatch:
-
-env:
-  AZURE_FUNCTIONAPP_NAME: 'swapify-api-func'
-  NODE_VERSION: '20.x'
 
 jobs:
   build-and-deploy:
@@ -20,7 +16,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: ${{ env.NODE_VERSION }}
+          node-version: '20.x'
 
       - name: Install dependencies
         run: npm install --omit=dev
@@ -30,14 +26,8 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      - name: Deploy to Azure Function App
-        run: |
-          zip -r deploy.zip . \
-            --exclude "frontend/*" \
-            --exclude ".git/*" \
-            --exclude ".github/*" \
-            --exclude "*.zip"
-          az functionapp deployment source config-zip \
-            --resource-group swapify-rg \
-            --name ${{ env.AZURE_FUNCTIONAPP_NAME }} \
-            --src deploy.zip
+      - name: Deploy to Azure Web App
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: 'swapify-api-func'
+          package: .
