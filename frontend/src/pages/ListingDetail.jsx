@@ -88,7 +88,6 @@ export default function ListingDetail() {
     .catch(() => {});
 }, [listing, userId, isSignedIn]);
 
-  // 🔥 CREATE CHAT THREAD
   const startChat = async () => {
   setChatError(null);
   if (!isSignedIn) {
@@ -133,9 +132,9 @@ export default function ListingDetail() {
       {/* PAYMENT */}
       {isBuyer && isForSale && <PaymentPanel listing={listing} />}
       {/* SELLER VIEW - show incoming messages */}
-{isSignedIn && listing.seller_id === userId && (
+{isSignedIn && listing.seller_id === userId && threadId && (
   <div className="detail-card">
-    <button onClick={startChat} disabled={!isLoaded || roleLoading}>
+    <button onClick={() => {}} disabled={!isLoaded || roleLoading}>
       💬 {(!isLoaded || roleLoading) ? 'Loading...' : 'View Messages'}
     </button>
     {chatError && <p style={{ color: 'red', marginTop: '0.5rem' }}>{chatError}</p>}
