@@ -79,7 +79,7 @@ export default function Chat({ threadId, userId }) {
             >
               <p style={{ margin: 0, fontSize: "0.9rem" }}>{msg.content}</p>
               <small style={{ color: "#888", fontSize: "0.7rem" }}>
-                {new Date(msg.created_at).toLocaleTimeString()}
+                {msg.sent_at ? new Date(msg.sent_at).toLocaleTimeString() : ''}
               </small>
             </div>
           ))
