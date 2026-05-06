@@ -66,16 +66,27 @@ router.post("/", async (req, res) => {
       return res.status(400).json({ error: "Slot already booked" });
     }
 
-    // Look up the seller's Clerk auth_id via the transaction -> listing -> users chain
-    const sellerRes = await pool.query(
-      `SELECT u.auth_id FROM transactions t
-       JOIN listings l ON l.id = t.listing_id
-       JOIN users u ON u.id = l.seller_id
-       WHERE t.id = $1`,
-      [trade_id]
-    );
+    // Look up the seller's Clerk auth_id via transaction -> listing -> users
+const sellerRes = await pool.query(
+  `SELECT u.auth_id FROM transactions t
+   JOIN listings l ON l.id = t.listing_id
+   JOIN users u ON u.id = l.seller_id
+   WHERE t.id = $1`,
+  [trade_id]
+)
 
-    const seller_clerk_id = sellerRes.rows[0]?.auth_id ?? null;
+let seller_clerk_id = sellerRes.rows[0]?.auth_id ?? null
+
+// Fallback: look up seller directly from listings if no transaction found
+if (!seller_clerk_id) {
+  const listingRes = await pool.query(
+    `SELECT u.auth_id FROM listings l
+     JOIN users u ON u.id = l.seller_id
+     WHERE l.id = $1`,
+    [trade_id]
+  )
+  seller_clerk_id = listingRes.rows[0]?.auth_id ?? null
+}
 
     // Insert booking
     const result = await pool.query(
