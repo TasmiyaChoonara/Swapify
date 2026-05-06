@@ -2,7 +2,7 @@ const pool = require('../config/db');
 
 const getMessagesByThread = async (threadId) => {
   const res = await pool.query(
-    'SELECT * FROM messages WHERE thread_id=$1 ORDER BY created_at ASC',
+    'SELECT * FROM messages WHERE thread_id=$1 ORDER BY sent_at ASC',
     [threadId]
   );
   return res.rows;

@@ -9,4 +9,16 @@ const getAnalytics = async (req, res) => {
   }
 };
 
-module.exports = { getAnalytics };
+const exportAnalyticsCSV = async (req, res) => {
+  try {
+    const csv = await analyticsModel.getAnalyticsCSV();
+    const date = new Date().toISOString().slice(0, 10);
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', `attachment; filename="swapify-analytics-${date}.csv"`);
+    res.send(csv);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+module.exports = { getAnalytics, exportAnalyticsCSV };

@@ -17,12 +17,15 @@ api.interceptors.request.use(async (config) => {
   if (_getToken) {
     try {
       const token = await _getToken()
+      console.log('token:', token ? 'present' : 'missing')
       if (token) {
         config.headers.Authorization = `Bearer ${token}`
       }
     } catch {
-      // unauthenticated request — let it through
+      console.log('token error')
     }
+  } else {
+    console.log('no token getter')
   }
   return config
 })
