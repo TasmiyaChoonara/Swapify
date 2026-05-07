@@ -21,13 +21,9 @@ jobs:
       - name: Install dependencies
         run: npm install --omit=dev
 
-      - name: Login to Azure
-        uses: azure/login@v2
+      - name: Deploy to Azure Function App
+        uses: Azure/functions-action@v1
         with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
-
-      - name: Deploy to Azure Web App
-        uses: azure/webapps-deploy@v3
-        with:
-          app-name: 'swapify-backend'
+          app-name: 'swapifyBackend'
           package: .
+          publish-profile: ${{ secrets.AZURE_FUNCTIONAPP_PUBLISH_PROFILE }}
