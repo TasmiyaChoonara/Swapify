@@ -7,7 +7,6 @@ import useRole from '../hooks/useRole'
 const ROLES = ['student', 'staff', 'admin']
 const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
 
-// Simple bar chart rendered in SVG
 function BarChart({ data, labelKey, valueKey, color = 'var(--accent)' }) {
   if (!data || data.length === 0) return <p style={{ color: 'var(--text-muted)', fontSize: '.875rem' }}>No data available.</p>
   const max = Math.max(...data.map(d => Number(d[valueKey])))
@@ -49,22 +48,19 @@ export default function Admin() {
   const [deletingId, setDeletingId]     = useState(null)
   const [error, setError] = useState(null)
 
-  // Facility config state
   const [facilityConfig, setFacilityConfig] = useState([])
-  const [configForm, setConfigForm] = useState({
-    dayOfWeek: 1,
-    openTime: '08:00',
-    closeTime: '17:00',
-    slotCapacity: 10,
-  })
+  const [configForm, setConfigForm] = useState({ dayOfWeek: 1, openTime: '08:00', closeTime: '17:00', slotCapacity: 10 })
   const [configSaving, setConfigSaving] = useState(false)
   const [configSuccess, setConfigSuccess] = useState(null)
   const [configError, setConfigError] = useState(null)
 
-  // Analytics state
   const [analytics, setAnalytics] = useState(null)
   const [analyticsLoading, setAnalyticsLoading] = useState(true)
   const [exportingCSV, setExportingCSV] = useState(false)
+
+  const [reviews, setReviews] = useState([])
+  const [reviewsLoading, setReviewsLoading] = useState(true)
+  const [reviewActionId, setReviewActionId] = useState(null)
 
   const canAccess = isAdmin || isStaff
 
@@ -77,19 +73,20 @@ export default function Admin() {
     if (!canAccess) return
     const requests = [api.get('/admin/analytics')]
     if (isAdmin) {
-      requests.push(api.get('/users'), api.get('/listings'), api.get('/facility-config'))
+      requests.push(api.get('/users'), api.get('/listings'), api.get('/facility-config'), api.get('/ratings'))
     }
     Promise.all(requests)
-      .then(([aRes, uRes, lRes, cRes]) => {
+      .then(([aRes, uRes, lRes, cRes, rRes]) => {
         setAnalytics(aRes.data)
         if (isAdmin) {
           setUsers(uRes.data)
           setListings(lRes.data)
           setFacilityConfig(cRes.data)
+          setReviews(rRes.data)
         }
       })
       .catch(err => setError(err.response?.data?.error ?? 'Failed to load data.'))
-      .finally(() => { setLoading(false); setAnalyticsLoading(false) })
+      .finally(() => { setLoading(false); setAnalyticsLoading(false); setReviewsLoading(false) })
   }, [canAccess, isAdmin])
 
   async function handleRoleChange(userId, newRole) {
@@ -154,13 +151,40 @@ export default function Admin() {
     }
   }
 
+  function handleExportPDF() {
+    window.print()
+  }
+
+  async function handleFlag(id) {
+    setReviewActionId(id)
+    try {
+      const res = await api.patch(`/ratings/${id}/flag`)
+      setReviews(prev => prev.map(r => r.id === id ? res.data : r))
+    } catch (err) {
+      alert(err.response?.data?.error ?? 'Failed to flag review.')
+    } finally {
+      setReviewActionId(null)
+    }
+  }
+
+  async function handleRemove(id) {
+    setReviewActionId(id)
+    try {
+      const res = await api.patch(`/ratings/${id}/remove`)
+      setReviews(prev => prev.map(r => r.id === id ? res.data : r))
+    } catch (err) {
+      alert(err.response?.data?.error ?? 'Failed to remove review.')
+    } finally {
+      setReviewActionId(null)
+    }
+  }
+
   if (!isLoaded || roleLoading) {
     return <div className="page"><div className="container"><div className="spinner" /></div></div>
   }
 
   if (!canAccess) return null
 
-  // Compute summary stats from analytics
   const totalListings = analytics?.listingStats?.reduce((s, r) => s + Number(r.count), 0) ?? '—'
   const activeListings = analytics?.listingStats?.find(r => r.status === 'active')?.count ?? '—'
   const removedListings = analytics?.flagged?.count ?? '—'
@@ -169,11 +193,14 @@ export default function Admin() {
   const paidPayments = analytics?.paymentStats?.find(r => r.status === 'paid')
   const totalRevenue = paidPayments ? `R${parseFloat(paidPayments.total).toFixed(2)}` : 'R0.00'
 
+  const flaggedCount = reviews.filter(r => r.flagged).length
+  const removedCount = reviews.filter(r => r.removed).length
+
   return (
     <div className="page">
       <div className="container">
 
-        <Link to="/" className="back-link">← Back to listings</Link>
+        <Link to="/" className="back-link">Back to listings</Link>
 
         <h1 style={{ color: 'var(--text)', margin: '1.5rem 0 .25rem' }}>Admin Panel</h1>
         <p style={{ color: 'var(--text-muted)', marginBottom: '2rem' }}>
@@ -182,42 +209,49 @@ export default function Admin() {
 
         {error && <div className="error-banner" style={{ marginBottom: '1.5rem' }}>{error}</div>}
 
-        {/* ── Analytics Dashboard ── */}
+        {/* Analytics */}
         <section className="admin-section">
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
             <h2 className="admin-section-title" style={{ margin: 0 }}>Analytics Dashboard</h2>
-            <button
-              className="btn btn-outline"
-              onClick={handleExportCSV}
-              disabled={exportingCSV || analyticsLoading}
-              style={{ fontSize: '.8rem', padding: '.4rem .9rem' }}
-            >
-              {exportingCSV ? 'Exporting...' : '⬇ Export CSV'}
-            </button>
+            <div style={{ display: 'flex', gap: '.5rem' }}>
+              <button
+                className="btn btn-outline"
+                onClick={handleExportCSV}
+                disabled={exportingCSV || analyticsLoading}
+                style={{ fontSize: '.8rem', padding: '.4rem .9rem' }}
+              >
+                {exportingCSV ? 'Exporting...' : 'Export CSV'}
+              </button>
+              <button
+                className="btn btn-outline"
+                onClick={handleExportPDF}
+                disabled={analyticsLoading}
+                style={{ fontSize: '.8rem', padding: '.4rem .9rem' }}
+              >
+                Export PDF
+              </button>
+            </div>
           </div>
 
           {analyticsLoading ? (
             <div className="spinner" />
           ) : (
             <>
-              {/* Stat cards */}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
                 <StatCard label="Total Users" value={totalUsers} />
                 <StatCard label="Active Listings" value={activeListings} sub={`${totalListings} total`} />
                 <StatCard label="Removed Listings" value={removedListings} sub="moderated" />
                 <StatCard label="Completed Trades" value={completedTx} sub="last 30 days" />
                 <StatCard label="Online Revenue" value={totalRevenue} sub="paid payments" />
+                <StatCard label="Flagged Reviews" value={flaggedCount} sub={`${removedCount} removed`} />
               </div>
 
-              {/* Category chart */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
                 <div style={{ background: 'rgba(255,255,255,.03)', border: '1px solid rgba(255,255,255,.07)', borderRadius: 'var(--radius)', padding: '1rem' }}>
                   <h3 style={{ color: 'var(--text)', fontSize: '.85rem', margin: '0 0 .25rem' }}>Category Popularity</h3>
                   <p style={{ color: 'var(--text-muted)', fontSize: '.75rem', margin: '0 0 .5rem' }}>Listings per category</p>
                   <BarChart data={analytics?.categories ?? []} labelKey="category" valueKey="count" color="var(--accent)" />
                 </div>
-
-                {/* Transaction trend */}
                 <div style={{ background: 'rgba(255,255,255,.03)', border: '1px solid rgba(255,255,255,.07)', borderRadius: 'var(--radius)', padding: '1rem' }}>
                   <h3 style={{ color: 'var(--text)', fontSize: '.85rem', margin: '0 0 .25rem' }}>Completed Transactions</h3>
                   <p style={{ color: 'var(--text-muted)', fontSize: '.75rem', margin: '0 0 .5rem' }}>Last 30 days</p>
@@ -230,7 +264,6 @@ export default function Admin() {
                 </div>
               </div>
 
-              {/* Listing status + payment breakdown */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginTop: '1.5rem' }}>
                 <div style={{ background: 'rgba(255,255,255,.03)', border: '1px solid rgba(255,255,255,.07)', borderRadius: 'var(--radius)', padding: '1rem' }}>
                   <h3 style={{ color: 'var(--text)', fontSize: '.85rem', margin: '0 0 .75rem' }}>Listing Status Breakdown</h3>
@@ -246,7 +279,6 @@ export default function Admin() {
                     </tbody>
                   </table>
                 </div>
-
                 <div style={{ background: 'rgba(255,255,255,.03)', border: '1px solid rgba(255,255,255,.07)', borderRadius: 'var(--radius)', padding: '1rem' }}>
                   <h3 style={{ color: 'var(--text)', fontSize: '.85rem', margin: '0 0 .75rem' }}>Payment Summary</h3>
                   <table className="admin-table">
@@ -274,7 +306,66 @@ export default function Admin() {
           <div className="spinner" />
         ) : (
           <>
-            {/* ── Facility Config (admin only) ── */}
+            {/* Reviews section — admin only */}
+            {isAdmin && (
+              <section className="admin-section">
+                <h2 className="admin-section-title">Reviews</h2>
+                {reviewsLoading ? (
+                  <div className="spinner" />
+                ) : reviews.length === 0 ? (
+                  <p style={{ color: 'var(--text-muted)', fontSize: '.875rem' }}>No reviews yet.</p>
+                ) : (
+                  <div className="admin-table-wrap">
+                    <table className="admin-table">
+                      <thead>
+                        <tr><th>Reviewer</th><th>Reviewee</th><th>Score</th><th>Comment</th><th>Flagged</th><th>Removed</th><th></th></tr>
+                      </thead>
+                      <tbody>
+                        {reviews.map(r => (
+                          <tr key={r.id}>
+                            <td>{r.reviewer_name}</td>
+                            <td>{r.reviewee_name}</td>
+                            <td className="admin-cell-muted">{r.score}/5</td>
+                            <td className="admin-cell-muted" style={{ maxWidth: '200px' }}>{r.comment ?? '—'}</td>
+                            <td>
+                              <span className={`badge ${r.flagged ? 'badge-yellow' : 'badge-muted'}`}>
+                                {r.flagged ? 'Flagged' : 'No'}
+                              </span>
+                            </td>
+                            <td>
+                              <span className={`badge ${r.removed ? 'badge-muted' : 'badge-green'}`}>
+                                {r.removed ? 'Removed' : 'Visible'}
+                              </span>
+                            </td>
+                            <td style={{ display: 'flex', gap: '.4rem' }}>
+                              <button
+                                className="btn btn-outline btn-sm"
+                                disabled={reviewActionId === r.id}
+                                onClick={() => handleFlag(r.id)}
+                                style={{ fontSize: '.75rem', padding: '.25rem .6rem' }}
+                              >
+                                {r.flagged ? 'Unflag' : 'Flag'}
+                              </button>
+                              {!r.removed && (
+                                <button
+                                  className="admin-delete-btn"
+                                  disabled={reviewActionId === r.id}
+                                  onClick={() => handleRemove(r.id)}
+                                >
+                                  Remove
+                                </button>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </section>
+            )}
+
+            {/* Facility Config */}
             {isAdmin && (
               <section className="admin-section">
                 <h2 className="admin-section-title">Trade Facility Configuration</h2>
@@ -286,20 +377,11 @@ export default function Admin() {
                     ) : (
                       <div className="admin-table-wrap">
                         <table className="admin-table">
-                          <thead>
-                            <tr>
-                              <th>Day</th><th>Open</th><th>Close</th><th>Capacity</th>
-                            </tr>
-                          </thead>
+                          <thead><tr><th>Day</th><th>Open</th><th>Close</th><th>Capacity</th></tr></thead>
                           <tbody>
                             {facilityConfig.map(c => (
                               <tr key={c.id} style={{ cursor: 'pointer' }}
-                                onClick={() => setConfigForm({
-                                  dayOfWeek: c.day_of_week,
-                                  openTime: c.open_time.slice(0, 5),
-                                  closeTime: c.close_time.slice(0, 5),
-                                  slotCapacity: c.slot_capacity,
-                                })}
+                                onClick={() => setConfigForm({ dayOfWeek: c.day_of_week, openTime: c.open_time.slice(0, 5), closeTime: c.close_time.slice(0, 5), slotCapacity: c.slot_capacity })}
                               >
                                 <td>{DAYS[c.day_of_week]}</td>
                                 <td className="admin-cell-muted">{c.open_time.slice(0, 5)}</td>
@@ -359,15 +441,13 @@ export default function Admin() {
               </section>
             )}
 
-            {/* ── Users table (admin only) ── */}
+            {/* Users */}
             {isAdmin && (
               <section className="admin-section">
                 <h2 className="admin-section-title">Users ({users.length})</h2>
                 <div className="admin-table-wrap">
                   <table className="admin-table">
-                    <thead>
-                      <tr><th>Name</th><th>Email</th><th>Role</th><th>Joined</th></tr>
-                    </thead>
+                    <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Joined</th></tr></thead>
                     <tbody>
                       {users.map(u => (
                         <tr key={u.id}>
@@ -392,28 +472,22 @@ export default function Admin() {
               </section>
             )}
 
-            {/* ── Listings table (admin only) ── */}
+            {/* Listings */}
             {isAdmin && (
               <section className="admin-section">
                 <h2 className="admin-section-title">Listings ({listings.length})</h2>
                 <div className="admin-table-wrap">
                   <table className="admin-table">
-                    <thead>
-                      <tr><th>Title</th><th>Category</th><th>Type</th><th>Status</th><th>Price</th><th></th></tr>
-                    </thead>
+                    <thead><tr><th>Title</th><th>Category</th><th>Type</th><th>Status</th><th>Price</th><th></th></tr></thead>
                     <tbody>
                       {listings.map(l => (
                         <tr key={l.id}>
                           <td>
-                            <Link to={`/listings/${l.id}`} style={{ color: 'var(--accent)', textDecoration: 'none' }}>
-                              {l.title}
-                            </Link>
+                            <Link to={`/listings/${l.id}`} style={{ color: 'var(--accent)', textDecoration: 'none' }}>{l.title}</Link>
                           </td>
                           <td className="admin-cell-muted">{l.category ?? '—'}</td>
                           <td className="admin-cell-muted">{l.type}</td>
-                          <td>
-                            <span className={`badge ${l.status === 'active' ? 'badge-green' : 'badge-muted'}`}>{l.status}</span>
-                          </td>
+                          <td><span className={`badge ${l.status === 'active' ? 'badge-green' : 'badge-muted'}`}>{l.status}</span></td>
                           <td className="admin-cell-muted">
                             {l.type === 'trade' ? 'Trade' : l.price != null ? `R${parseFloat(l.price).toFixed(2)}` : '—'}
                           </td>
@@ -422,7 +496,7 @@ export default function Admin() {
                               onClick={() => handleDeleteListing(l.id)}
                               disabled={deletingId === l.id}
                             >
-                              {deletingId === l.id ? '…' : 'Remove'}
+                              {deletingId === l.id ? '...' : 'Remove'}
                             </button>
                           </td>
                         </tr>
