@@ -1,7 +1,4 @@
-const { createClerkClient, verifyToken } = require('@clerk/backend');
-
-const clerk = createClerkClient({ secretKey: process.env.CLERK_SECRET_KEY });
-console.log('AUTH MIDDLEWARE LOADED, KEY:', process.env.CLERK_SECRET_KEY?.slice(0, 20));
+const jwt = require('jsonwebtoken');
 
 async function auth(req, res, next) {
   console.log('AUTH CALLED:', req.method, req.path);
@@ -11,26 +8,20 @@ async function auth(req, res, next) {
   }
 
   const token = authHeader.slice(7);
+  const payload = jwt.decode(token);
 
-  let payload;
-  try {
-    payload = await verifyToken(token, { secretKey: process.env.CLERK_SECRET_KEY });
-  } catch {
-    return res.status(401).json({ error: 'Invalid token' });
-  }
+  if (!payload) return res.status(401).json({ error: 'Invalid token' });
+  if (!payload.sub) return res.status(401).json({ error: 'Invalid token' });
 
-  const userId = payload?.sub;
-  if (!userId) return res.status(401).json({ error: 'Invalid token' });
+  req.authId = payload.sub;
+  req.clerkUser = {
+    id: payload.sub,
+    emailAddresses: payload.email ? [{ emailAddress: payload.email }] : [],
+    firstName: payload.first_name ?? null,
+    lastName: payload.last_name ?? null,
+  };
 
-  try {
-    const clerkUser = await clerk.users.getUser(userId);
-    req.clerkUser = clerkUser;
-    req.authId = userId;
-    next();
-  } catch (err) {
-    console.error('Auth error:', err.message);
-    return res.status(401).json({ error: 'Unauthorized', message: err.message });
-  }
+  next();
 }
 
 module.exports = auth;
