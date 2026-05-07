@@ -15,6 +15,8 @@ const REVIEWEE_ID = 'user-seller-id';
 const REVIEWER_ID = 'user-buyer-id';
 const RATING_ID = 'rat-uuid-001';
 
+const COMPLETE_TX = { id: TRANSACTION_ID, status: 'complete', buyer_id: REVIEWER_ID, seller_id: REVIEWEE_ID };
+
 beforeEach(() => {
   jest.clearAllMocks();
 });
@@ -30,9 +32,9 @@ describe('POST /api/ratings', () => {
   });
 
   test('403 if user is not party to the transaction', async () => {
-    pool.query
-      .mockResolvedValueOnce({ rows: [{ id: TRANSACTION_ID, status: 'complete', buyer_id: 'other-user', seller_id: 'another-user' }] })
-      .mockResolvedValueOnce({ rows: [] });
+    pool.query.mockResolvedValueOnce({
+      rows: [{ id: TRANSACTION_ID, status: 'complete', buyer_id: 'other-user', seller_id: 'another-user' }]
+    });
     const res = await request(app)
       .post('/api/ratings')
       .set('Authorization', 'Bearer valid.token.here')
@@ -41,7 +43,9 @@ describe('POST /api/ratings', () => {
   });
 
   test('400 if transaction is not complete', async () => {
-    pool.query.mockResolvedValueOnce({ rows: [{ id: TRANSACTION_ID, status: 'active', buyer_id: REVIEWER_ID, seller_id: REVIEWEE_ID }] });
+    pool.query.mockResolvedValueOnce({
+      rows: [{ id: TRANSACTION_ID, status: 'active', buyer_id: REVIEWER_ID, seller_id: REVIEWEE_ID }]
+    });
     const res = await request(app)
       .post('/api/ratings')
       .set('Authorization', 'Bearer valid.token.here')
@@ -52,7 +56,7 @@ describe('POST /api/ratings', () => {
 
   test('400 if user has already rated this transaction', async () => {
     pool.query
-      .mockResolvedValueOnce({ rows: [{ id: TRANSACTION_ID, status: 'complete', buyer_id: REVIEWER_ID, seller_id: REVIEWEE_ID }] })
+      .mockResolvedValueOnce({ rows: [COMPLETE_TX] })
       .mockResolvedValueOnce({ rows: [{ id: RATING_ID }] });
     const res = await request(app)
       .post('/api/ratings')
@@ -64,7 +68,7 @@ describe('POST /api/ratings', () => {
 
   test('201 on valid data', async () => {
     pool.query
-      .mockResolvedValueOnce({ rows: [{ id: TRANSACTION_ID, status: 'complete', buyer_id: REVIEWER_ID, seller_id: REVIEWEE_ID }] })
+      .mockResolvedValueOnce({ rows: [COMPLETE_TX] })
       .mockResolvedValueOnce({ rows: [] })
       .mockResolvedValueOnce({ rows: [{ id: RATING_ID, score: 4, comment: 'Great!' }] });
     const res = await request(app)
