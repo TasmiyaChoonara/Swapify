@@ -123,10 +123,27 @@ export default function ListingDetail() {
     if (!isSignedIn) { setChatError('You must be signed in to message the seller.'); return; }
     if (!userId) { setChatError('Still loading your profile, please try again.'); return; }
     const isSeller = listing.seller_id === userId;
+
+    // Sellers only view existing threads, never create one (buyer_id would be null)
+    if (isSeller) {
+      try {
+        const res = await api.get(`/threads/listing/${listing.id}`);
+        if (res.data && res.data.length > 0) {
+          setThreadId(res.data[0].id);
+        } else {
+          setChatError('No messages yet for this listing.');
+        }
+      } catch (err) {
+        setChatError(err.response?.data?.error ?? err.message ?? 'Failed to load messages.');
+      }
+      return;
+    }
+
+    // Only buyers create threads
     try {
       const res = await api.post('/threads', {
         listingId: listing.id,
-        buyerId: isSeller ? null : userId,
+        buyerId: userId,
         sellerId: listing.seller_id,
       });
       if (!res.data?.id) throw new Error('No thread ID returned from server.');
