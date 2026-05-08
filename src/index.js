@@ -16,6 +16,7 @@ const transactionsRouter = require('./routes/transactions');
 const messageRoutes = require('./routes/messageRoutes');
 const threadRoutes = require('./routes/threadRoutes');
 const adminRoutes = require('./routes/adminRoutes');
+const ratingsRouter = require('./routes/ratings');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -57,6 +58,7 @@ app.use('/api/transactions', transactionsRouter);
 app.use('/api/messages', messageRoutes);
 app.use('/api/threads', threadRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/ratings', ratingsRouter);
 // Health check
 app.get('/health', async (req, res) => {
   try {
