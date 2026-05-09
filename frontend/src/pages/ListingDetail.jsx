@@ -27,8 +27,11 @@ function PaymentPanel({ listing }) {
     setError(null)
     try {
       const token = await getToken()
+  
+      const txRes = await api.post('/transactions', { listingId: listing.id, type: 'sale' })
+      const transactionId = txRes.data.id
       const result = await initiatePayFastPayment({
-        transactionId:   listing.id,
+        transactionId,
         listingId:       listing.id,
         amount:          listing.price,
         itemName:        listing.title,
@@ -43,7 +46,6 @@ function PaymentPanel({ listing }) {
       setLoading(false)
     }
   }
-
   return (
     <div className="detail-card" style={{ borderColor: 'rgba(139,92,246,.3)' }}>
       <h3 style={{ color: 'var(--text)', marginBottom: '.25rem' }}>Buy This Item</h3>
