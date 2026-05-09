@@ -3,7 +3,6 @@ const auth = require('../middleware/auth');
 const requireRole = require('../middleware/roles');
 const userService = require('../services/userService');
 const { initiatePayment, getByTransaction } = require('../controllers/paymentController');
-
 const router = Router();
 
 async function attachDbUser(req, res, next) {
@@ -18,6 +17,18 @@ async function attachDbUser(req, res, next) {
 router.use(auth, attachDbUser);
 
 router.post('/initiate', initiatePayment);
+
+// Staff/admin only route
 router.get('/transaction/:transactionId', requireRole('staff', 'admin'), getByTransaction);
+
+// Buyer-accessible route — any authenticated user can fetch their own payment
+router.get('/my/:transactionId', async (req, res) => {
+  try {
+    const payment = await require('../services/paymentService').getPaymentByTransaction(req.params.transactionId);
+    res.json(payment);
+  } catch (err) {
+    res.status(err.status || 404).json({ error: err.message });
+  }
+});
 
 module.exports = router;
