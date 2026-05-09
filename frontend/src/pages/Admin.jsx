@@ -504,8 +504,76 @@ export default function Admin() {
                     </tbody>
                   </table>
                 </div>
-              </section>
+             </section>
             )}
+
+            {/* ── ANA-01: Facility Utilisation ── */}
+            <section className="admin-section">
+              <h2 className="admin-section-title">Facility Utilisation (Last 30 Days)</h2>
+              {analyticsLoading ? (
+                <div className="spinner" />
+              ) : (analytics?.facilityUtilisation ?? []).length === 0 ? (
+                <p style={{ color: 'var(--text-muted)', fontSize: '.875rem' }}>No booking data in the last 30 days.</p>
+              ) : (
+                <>
+                  <BarChart
+                    data={analytics.facilityUtilisation}
+                    labelKey="date"
+                    valueKey="utilisation_pct"
+                    color="var(--accent)"
+                  />
+                  <div className="admin-table-wrap" style={{ marginTop: '1rem' }}>
+                    <table className="admin-table">
+                      <thead>
+                        <tr><th>Date</th><th>Booked</th><th>Capacity</th><th>Utilisation %</th></tr>
+                      </thead>
+                      <tbody>
+                        {analytics.facilityUtilisation.map((r, i) => (
+                          <tr key={i}>
+                            <td>{new Date(r.date).toLocaleDateString('en-ZA')}</td>
+                            <td className="admin-cell-muted">{r.booked}</td>
+                            <td className="admin-cell-muted">{r.capacity}</td>
+                            <td>
+                              <span className={`badge ${Number(r.utilisation_pct) >= 80 ? 'badge-green' : Number(r.utilisation_pct) >= 50 ? 'badge-yellow' : 'badge-muted'}`}>
+                                {r.utilisation_pct}%
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </>
+              )}
+            </section>
+
+            {/* ── ANA-02: Moderation Trends ── */}
+            <section className="admin-section">
+              <h2 className="admin-section-title">Moderation Trends (Last 30 Days)</h2>
+              {analyticsLoading ? (
+                <div className="spinner" />
+              ) : (analytics?.moderationReport ?? []).length === 0 ? (
+                <p style={{ color: 'var(--text-muted)', fontSize: '.875rem' }}>No moderation data available yet.</p>
+              ) : (
+                <div className="admin-table-wrap">
+                  <table className="admin-table">
+                    <thead>
+                      <tr><th>Week</th><th>Flagged</th><th>Removed</th></tr>
+                    </thead>
+                    <tbody>
+                      {analytics.moderationReport.map((r, i) => (
+                        <tr key={i}>
+                          <td>{new Date(r.week).toLocaleDateString('en-ZA')}</td>
+                          <td className="admin-cell-muted">{r.flagged_count}</td>
+                          <td className="admin-cell-muted">{r.removed_count}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </section>
+
           </>
         )}
       </div>
