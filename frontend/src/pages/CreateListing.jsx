@@ -83,6 +83,10 @@ function PriceSuggestion({ suggestion, loading }) {
       {': '}
       <strong>R{min.toLocaleString()} – R{median.toLocaleString()}</strong>
       <span className="price-suggestion-max"> (up to R{max.toLocaleString()})</span>
+      <br />
+      <span style={{ fontSize: '12px', color: '#999', fontStyle: 'italic' }}>
+        Source: SA retail price research (Takealot, OLX ZA)
+      </span>
     </p>
   )
 }
