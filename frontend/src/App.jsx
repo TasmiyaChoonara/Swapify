@@ -11,6 +11,7 @@ import PaymentSuccess from './pages/PaymentSuccess'
 import PaymentCancel from './pages/PaymentCancel'
 import BookSlot from './pages/BookSlot'
 import MyBookings from './pages/MyBookings'
+import StaffDashboard from './pages/StaffDashboard'
 
 function TokenSync() {
   const { getToken } = useAuth()
@@ -35,6 +36,7 @@ export default function App() {
         <Route path="/payment/cancel"     element={<PaymentCancel />} />
         <Route path="/book/:trade_id"     element={<BookSlot />} />
         <Route path="/my-bookings"        element={<MyBookings />} />
+        <Route path="/staff" element={<StaffDashboard />} />
       </Routes>
     </BrowserRouter>
   )
