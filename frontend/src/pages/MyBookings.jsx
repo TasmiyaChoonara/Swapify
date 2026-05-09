@@ -18,6 +18,52 @@ const STATUS_BADGE = {
   cancelled: { label: 'Cancelled', color: 'badge-yellow' },
 }
 
+function PaymentBreakdown({ tradeId }) {
+  const [payment, setPayment] = useState(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    if (!tradeId) return
+    api.get(`/payments/my/${tradeId}`)
+      .then(res => setPayment(res.data))
+      .catch(() => setPayment(null))
+      .finally(() => setLoading(false))
+  }, [tradeId])
+
+  if (loading) return <p style={{ fontSize: '.8rem', color: 'var(--text-muted)' }}>Loading payment...</p>
+  if (!payment) return null
+
+  const shortfall = parseFloat(payment.cash_shortfall ?? 0)
+  const amount    = parseFloat(payment.amount ?? 0)
+  const isSettled = shortfall === 0
+
+  return (
+    <div style={{ marginTop: '.75rem', padding: '.75rem', background: 'rgba(139,92,246,.06)', borderRadius: '8px', fontSize: '.85rem' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '.3rem' }}>
+        <span style={{ color: 'var(--text-muted)' }}>Paid online</span>
+        <span style={{ color: 'var(--text)', fontWeight: 500 }}>R{amount.toFixed(2)}</span>
+      </div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '.5rem' }}>
+        <span style={{ color: 'var(--text-muted)' }}>Cash due at facility</span>
+        <span style={{ color: shortfall > 0 ? 'rgb(251,146,60)' : 'var(--text)', fontWeight: 500 }}>
+          R{shortfall.toFixed(2)}
+        </span>
+      </div>
+      <span style={{
+        display: 'inline-block',
+        padding: '.2rem .6rem',
+        borderRadius: '999px',
+        fontSize: '.75rem',
+        fontWeight: 600,
+        background: isSettled ? 'rgba(34,197,94,.15)' : 'rgba(251,146,60,.15)',
+        color: isSettled ? 'rgb(34,197,94)' : 'rgb(251,146,60)',
+      }}>
+        {isSettled ? '✓ Fully settled' : '⏳ Cash pending'}
+      </span>
+    </div>
+  )
+}
+
 export default function MyBookings() {
   const { isSignedIn, isLoaded, userId } = useAuth()
   const [bookings, setBookings] = useState([])
@@ -49,7 +95,6 @@ export default function MyBookings() {
         </div>
 
         {loading && <div className="spinner" />}
-
         {!loading && error && <div className="error-banner">{error}</div>}
 
         {!loading && !error && bookings.length === 0 && (
@@ -68,7 +113,7 @@ export default function MyBookings() {
             {bookings.map(booking => {
               const { date, time } = formatSlotTime(booking.slot_time)
               const isBuyer = booking.buyer_id === userId
-              const badge = STATUS_BADGE[booking.status] ?? STATUS_BADGE.booked
+              const badge   = STATUS_BADGE[booking.status] ?? STATUS_BADGE.booked
 
               return (
                 <div key={booking.id} className="detail-card" style={{ display: 'flex', flexDirection: 'column', gap: '.75rem' }}>
@@ -95,11 +140,11 @@ export default function MyBookings() {
                     </div>
                   </div>
 
+                  {/* Payment breakdown — only shown to buyer */}
+                  {isBuyer && <PaymentBreakdown tradeId={booking.trade_id} />}
+
                   <div style={{ display: 'flex', gap: '.5rem' }}>
-                    <Link
-                      to={`/book/${booking.trade_id}`}
-                      className="btn btn-outline btn-sm"
-                    >
+                    <Link to={`/book/${booking.trade_id}`} className="btn btn-outline btn-sm">
                       View Slot
                     </Link>
                   </div>
