@@ -1,10 +1,11 @@
 jest.mock('../src/config/db', () => ({ query: jest.fn() }));
 jest.mock('../src/services/notificationService', () => ({ createNotification: jest.fn() }));
 jest.mock('../src/services/userService', () => ({
-  getOrCreateUser: jest.fn().mockResolvedValue({ id: 'db-user-1', role: 'staff' }),
+  getOrCreateUser: jest.fn(),
 }));
 
 const pool = require('../src/config/db');
+const userService = require('../src/services/userService');
 const request = require('supertest');
 const jwt = require('jsonwebtoken');
 const app = require('../src/expressApp');
@@ -17,7 +18,11 @@ const STAFF_TOKEN   = makeToken('staff-clerk-1', 'staff');
 const STUDENT_TOKEN = makeToken('student-clerk-1', 'student');
 const TRADE_ID      = 'trade-uuid-001';
 
-beforeEach(() => jest.clearAllMocks());
+beforeEach(() => {
+  jest.clearAllMocks();
+  // Default: student role
+  userService.getOrCreateUser.mockResolvedValue({ id: 'db-user-1', role: 'student' });
+});
 
 // ── POST /api/bookings ────────────────────────────────────────────────────────
 describe('POST /api/bookings', () => {
@@ -51,9 +56,7 @@ describe('POST /api/bookings', () => {
   });
 
   test('400 when slot is already booked', async () => {
-    pool.query
-      .mockResolvedValueOnce({ rows: [{ id: 1 }] }); // existing booking found
-
+    pool.query.mockResolvedValueOnce({ rows: [{ id: 1 }] });
     const validSlot = new Date();
     validSlot.setHours(10, 0, 0, 0);
     const res = await request(app)
@@ -66,10 +69,9 @@ describe('POST /api/bookings', () => {
 
   test('201 on valid booking', async () => {
     pool.query
-      .mockResolvedValueOnce({ rows: [] })            // no duplicate
-      .mockResolvedValueOnce({ rows: [{ auth_id: 'seller-clerk-1' }] }) // seller lookup
-      .mockResolvedValueOnce({ rows: [{ id: 99, trade_id: TRADE_ID, status: 'booked' }] }); // insert
-
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({ rows: [{ auth_id: 'seller-clerk-1' }] })
+      .mockResolvedValueOnce({ rows: [{ id: 99, trade_id: TRADE_ID, status: 'booked' }] });
     const validSlot = new Date();
     validSlot.setHours(10, 0, 0, 0);
     const res = await request(app)
@@ -84,7 +86,7 @@ describe('POST /api/bookings', () => {
 // ── GET /api/slots ────────────────────────────────────────────────────────────
 describe('GET /api/slots', () => {
   test('200 with available slots for a date', async () => {
-    pool.query.mockResolvedValueOnce({ rows: [] }); // no bookings yet
+    pool.query.mockResolvedValueOnce({ rows: [] });
     const res = await request(app)
       .get('/api/slots')
       .set('Authorization', STUDENT_TOKEN)
@@ -97,6 +99,7 @@ describe('GET /api/slots', () => {
 // ── PATCH /api/bookings/:id/receive ──────────────────────────────────────────
 describe('PATCH /api/bookings/:id/receive', () => {
   test('403 without staff role', async () => {
+    userService.getOrCreateUser.mockResolvedValue({ id: 'db-user-1', role: 'student' });
     const res = await request(app)
       .patch('/api/bookings/1/receive')
       .set('Authorization', STUDENT_TOKEN);
@@ -104,10 +107,10 @@ describe('PATCH /api/bookings/:id/receive', () => {
   });
 
   test('200 on success for staff', async () => {
+    userService.getOrCreateUser.mockResolvedValue({ id: 'db-staff-1', role: 'staff' });
     pool.query
-      .mockResolvedValueOnce({ rows: [{ id: 1, buyer_id: 'buyer-1', seller_id: 'seller-1' }] }) // booking exists
-      .mockResolvedValueOnce({ rows: [{ id: 1, status: 'item_held', buyer_id: 'buyer-1', seller_id: 'seller-1' }] }); // update
-
+      .mockResolvedValueOnce({ rows: [{ id: 1, buyer_id: 'buyer-1', seller_id: 'seller-1' }] })
+      .mockResolvedValueOnce({ rows: [{ id: 1, status: 'item_held', buyer_id: 'buyer-1', seller_id: 'seller-1' }] });
     const res = await request(app)
       .patch('/api/bookings/1/receive')
       .set('Authorization', STAFF_TOKEN);
@@ -116,6 +119,7 @@ describe('PATCH /api/bookings/:id/receive', () => {
   });
 
   test('404 when booking not found', async () => {
+    userService.getOrCreateUser.mockResolvedValue({ id: 'db-staff-1', role: 'staff' });
     pool.query.mockResolvedValueOnce({ rows: [] });
     const res = await request(app)
       .patch('/api/bookings/999/receive')
@@ -127,6 +131,7 @@ describe('PATCH /api/bookings/:id/receive', () => {
 // ── PATCH /api/bookings/:id/confirm-cash ─────────────────────────────────────
 describe('PATCH /api/bookings/:id/confirm-cash', () => {
   test('403 without staff role', async () => {
+    userService.getOrCreateUser.mockResolvedValue({ id: 'db-user-1', role: 'student' });
     const res = await request(app)
       .patch('/api/bookings/1/confirm-cash')
       .set('Authorization', STUDENT_TOKEN);
@@ -134,10 +139,10 @@ describe('PATCH /api/bookings/:id/confirm-cash', () => {
   });
 
   test('200 on success for staff', async () => {
+    userService.getOrCreateUser.mockResolvedValue({ id: 'db-staff-1', role: 'staff' });
     pool.query
-      .mockResolvedValueOnce({ rows: [{ id: 1, transaction_id: 'txn-1' }] }) // booking
-      .mockResolvedValueOnce({ rows: [{ id: 'pay-1', cash_confirmed: true }] }); // payment update
-
+      .mockResolvedValueOnce({ rows: [{ id: 1, transaction_id: 'txn-1' }] })
+      .mockResolvedValueOnce({ rows: [{ id: 'pay-1', cash_confirmed: true }] });
     const res = await request(app)
       .patch('/api/bookings/1/confirm-cash')
       .set('Authorization', STAFF_TOKEN);
@@ -149,6 +154,7 @@ describe('PATCH /api/bookings/:id/confirm-cash', () => {
 // ── PATCH /api/bookings/:id/release ──────────────────────────────────────────
 describe('PATCH /api/bookings/:id/release', () => {
   test('403 without staff role', async () => {
+    userService.getOrCreateUser.mockResolvedValue({ id: 'db-user-1', role: 'student' });
     const res = await request(app)
       .patch('/api/bookings/1/release')
       .set('Authorization', STUDENT_TOKEN);
@@ -156,6 +162,7 @@ describe('PATCH /api/bookings/:id/release', () => {
   });
 
   test('400 when cash shortfall not confirmed', async () => {
+    userService.getOrCreateUser.mockResolvedValue({ id: 'db-staff-1', role: 'staff' });
     pool.query.mockResolvedValueOnce({
       rows: [{ id: 1, status: 'item_held', cash_shortfall: 50, cash_confirmed: false, transaction_id: 'txn-1', buyer_id: 'b', seller_id: 's' }],
     });
@@ -167,11 +174,11 @@ describe('PATCH /api/bookings/:id/release', () => {
   });
 
   test('200 on success when no shortfall', async () => {
+    userService.getOrCreateUser.mockResolvedValue({ id: 'db-staff-1', role: 'staff' });
     pool.query
       .mockResolvedValueOnce({ rows: [{ id: 1, status: 'item_held', cash_shortfall: 0, cash_confirmed: false, transaction_id: 'txn-1', buyer_id: 'b', seller_id: 's' }] })
-      .mockResolvedValueOnce({ rows: [{ id: 1, status: 'complete' }] }) // update bookings
-      .mockResolvedValueOnce({ rows: [] }); // update transactions
-
+      .mockResolvedValueOnce({ rows: [{ id: 1, status: 'complete' }] })
+      .mockResolvedValueOnce({ rows: [] });
     const res = await request(app)
       .patch('/api/bookings/1/release')
       .set('Authorization', STAFF_TOKEN);
