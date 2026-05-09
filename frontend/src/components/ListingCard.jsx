@@ -1,4 +1,6 @@
 import { Link } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import api from '../services/api'
 
 const CONDITION_BADGE = {
   new:  'badge-green',
@@ -12,7 +14,6 @@ const TYPE_LABEL = {
   both:  'Sale / Trade',
 }
 
-// Placeholder icon when there's no image
 function ImagePlaceholder() {
   return (
     <div className="card-img-placeholder">
@@ -27,8 +28,16 @@ function ImagePlaceholder() {
 }
 
 export default function ListingCard({ listing }) {
-  const { id, title, price, condition, type, category, images } = listing
+  const { id, title, price, condition, type, category, images, seller_id } = listing
   const thumb = images?.[0]
+  const [average, setAverage] = useState(null)
+
+  useEffect(() => {
+    if (!seller_id) return
+    api.get(`/ratings/user/${seller_id}`)
+      .then(res => setAverage(res.data.average))
+      .catch(() => {})
+  }, [seller_id])
 
   const displayPrice = type === 'trade'
     ? 'Trade only'
@@ -49,6 +58,12 @@ export default function ListingCard({ listing }) {
 
           {displayPrice && (
             <p className="card-price">{displayPrice}</p>
+          )}
+
+          {average !== null && (
+            <p style={{ fontSize: '.75rem', color: 'var(--text-muted)', marginBottom: '.25rem' }}>
+              Seller: {average.toFixed(1)} / 5
+            </p>
           )}
 
           <div className="card-meta">

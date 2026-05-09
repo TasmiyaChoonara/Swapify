@@ -2,9 +2,9 @@
   "name": "swapify",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "src/functions/api.js",
   "scripts": {
-    "start": "node src/index.js",
+    "start": "func start",
     "dev": "nodemon src/index.js",
     "test": "jest",
     "migrate": "node scripts/migrate.js",
@@ -27,6 +27,7 @@
   },
   "devDependencies": {
     "jest": "^30.3.0",
-    "nodemon": "^3.1.14"
+    "nodemon": "^3.1.14",
+    "supertest": "^7.2.2"
   }
 }

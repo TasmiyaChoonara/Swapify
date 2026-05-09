@@ -26,8 +26,8 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      - name: Deploy to Azure Web App
-        uses: azure/webapps-deploy@v3
+      - name: Deploy to Azure Function App
+        uses: Azure/functions-action@v1
         with:
-          app-name: 'swapify-backend'
+          app-name: 'swapifyBackend'
           package: .
