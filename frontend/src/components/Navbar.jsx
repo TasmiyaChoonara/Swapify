@@ -12,7 +12,7 @@ function NotificationBell() {
   async function fetchNotifications() {
     try {
       const res = await api.get('/notifications')
-      setNotifications(res.data)
+      setNotifications(Array.isArray(res.data) ? res.data : [])
     } catch {
       // silently fail
     }
@@ -46,7 +46,7 @@ function NotificationBell() {
     } catch { }
   }
 
-  const unreadCount = notifications.filter(n => !n.read).length
+  const unreadCount = Array.isArray(notifications) ? notifications.filter(n => !n.read).length : 0
 
   return (
     <div ref={ref} style={{ position: 'relative' }}>
