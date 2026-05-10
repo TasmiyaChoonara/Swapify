@@ -4,6 +4,7 @@ import { useAuth, useUser, SignInButton } from '@clerk/clerk-react'
 import api from '../services/api'
 import { initiatePayFastPayment, redirectToPayFast } from '../services/payfastService'
 import useRole from '../hooks/useRole'
+import Chat from '../components/Chat'
 
 const CONDITION_BADGE = { new: 'badge-green', good: 'badge-purple', fair: 'badge-yellow' }
 const TYPE_LABEL      = { sale: 'For Sale', trade: 'Trade only', both: 'Sale / Trade' }
@@ -90,6 +91,10 @@ export default function ListingDetail() {
   const [deleting, setDeleting]   = useState(false)
   const [deleteError, setDeleteError] = useState(null)
   const [tradeId, setTradeId]     = useState(null)
+  const [chatThreadId, setChatThreadId]   = useState(null)
+  const [chatOpen, setChatOpen]           = useState(false)
+  const [chatLoading, setChatLoading]     = useState(false)
+  const [sellerTradesCount, setSellerTradesCount] = useState(null)
 
   const urlParams = new URLSearchParams(window.location.search)
   const returningFromPayFast = urlParams.get('payfast') === 'success'
@@ -100,6 +105,13 @@ export default function ListingDetail() {
       .then(res => {
         setListing(res.data)
         setMainImg(res.data.images?.[0] ?? null)
+        // Fetch seller's completed trades count (no auth required)
+        const sellerId = res.data.seller_id
+        if (sellerId) {
+          api.get(`/users/${sellerId}/completed-transactions`)
+            .then(r => setSellerTradesCount(r.data.count))
+            .catch(() => {})
+        }
       })
       .catch(() => setError('Listing not found or unavailable.'))
       .finally(() => setLoading(false))
@@ -123,6 +135,19 @@ export default function ListingDetail() {
       <div className="error-banner">{error ?? 'Listing not found.'}</div>
     </PageShell>
   )
+
+  async function handleMessageSeller() {
+    setChatLoading(true)
+    try {
+      const res = await api.post('/threads', { listingId: id, buyerId: userId, sellerId: seller_id })
+      setChatThreadId(res.data.id)
+      setChatOpen(true)
+    } catch {
+      // thread creation failed — silently ignore so the UI doesn't break
+    } finally {
+      setChatLoading(false)
+    }
+  }
 
   async function handleDelete() {
     if (!window.confirm('Are you sure you want to delete this listing?')) return
@@ -195,6 +220,10 @@ export default function ListingDetail() {
                 <div className="stat-val">{new Date(created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</div>
                 <div className="stat-key">Listed</div>
               </div>
+              <div className="stat">
+                <div className="stat-val">{sellerTradesCount ?? '—'}</div>
+                <div className="stat-key">Seller trades</div>
+              </div>
             </div>
           </div>
 
@@ -225,6 +254,29 @@ export default function ListingDetail() {
                 >
                   📅 Book a Trade Slot
                 </button>
+              )}
+            </div>
+          )}
+
+          {/* ── Message Seller ── */}
+          {isSignedIn && isBuyer && (
+            <div className="detail-card">
+              <h3 style={{ color: 'var(--text)', marginBottom: '.5rem' }}>Message Seller</h3>
+              {!chatOpen ? (
+                <>
+                  <p style={{ fontSize: '.875rem', marginBottom: '1.25rem' }}>
+                    Have a question? Chat directly with the seller.
+                  </p>
+                  <button
+                    className="btn btn-outline btn-full btn-lg"
+                    onClick={handleMessageSeller}
+                    disabled={chatLoading}
+                  >
+                    {chatLoading ? 'Opening chat...' : '💬 Message Seller'}
+                  </button>
+                </>
+              ) : (
+                <Chat threadId={chatThreadId} userId={userId} />
               )}
             </div>
           )}

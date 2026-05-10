@@ -2,9 +2,28 @@ const { Router } = require('express');
 const auth = require('../middleware/auth');
 const requireRole = require('../middleware/roles');
 const userService = require('../services/userService');
+const pool = require('../config/db');
 const { getMe, updateMyRole, getAllUsers, adminUpdateRole } = require('../controllers/userController');
 
 const router = Router();
+
+// Public — no auth required.  Returns count of completed transactions where the
+// given user was the seller, used by ListingDetail to show "N completed trades".
+router.get('/:userId/completed-transactions', async (req, res) => {
+  try {
+    const { rows } = await pool.query(
+      `SELECT COUNT(*) AS count
+       FROM transactions t
+       JOIN listings l ON l.id = t.listing_id
+       JOIN users u ON u.id = l.seller_id
+       WHERE u.id = $1 AND t.status = 'complete'`,
+      [req.params.userId]
+    );
+    res.json({ count: Number(rows[0].count) });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 // Attach the DB user to req.user after Clerk verification
 async function attachDbUser(req, res, next) {
