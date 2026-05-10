@@ -13,9 +13,13 @@ describe('validate()', () => {
     const result = validate({ dayOfWeek: 1, openTime: '17:00', closeTime: '08:00', slotCapacity: 5 });
     expect(result.error).toBeDefined();
   });
-  test('returns error for non-positive slotCapacity', () => {
-    const result = validate({ dayOfWeek: 1, openTime: '08:00', closeTime: '17:00', slotCapacity: 0 });
+  test('returns error for negative slotCapacity', () => {
+    const result = validate({ dayOfWeek: 1, openTime: '08:00', closeTime: '17:00', slotCapacity: -1 });
     expect(result.error).toBeDefined();
+  });
+  test('allows slotCapacity of 0 for closed days', () => {
+    const result = validate({ dayOfWeek: 1, openTime: '08:00', closeTime: '17:00', slotCapacity: 0 });
+    expect(result.error).toBeUndefined();
   });
   test('returns sanitised values on valid input', () => {
     const result = validate({ dayOfWeek: '1', openTime: '08:00', closeTime: '17:00', slotCapacity: '10' });
