@@ -4,6 +4,7 @@ const pool = require('../config/db');
 const BASE_SELECT = `
   SELECT
     l.*,
+    u.name AS seller_name,
     COALESCE(
       JSON_AGG(li.image_url ORDER BY li.created_at)
       FILTER (WHERE li.image_url IS NOT NULL),
@@ -11,6 +12,7 @@ const BASE_SELECT = `
     ) AS images
   FROM listings l
   LEFT JOIN listing_images li ON li.listing_id = l.id
+  LEFT JOIN users u ON u.id = l.seller_id
 `;
 
 async function findAll({ category, type, condition, status = 'active' } = {}) {
@@ -25,7 +27,7 @@ async function findAll({ category, type, condition, status = 'active' } = {}) {
   const sql = `
     ${BASE_SELECT}
     WHERE ${conditions.join(' AND ')}
-    GROUP BY l.id
+    GROUP BY l.id, u.name
     ORDER BY l.created_at DESC
   `;
   const { rows } = await pool.query(sql, values);
@@ -34,7 +36,7 @@ async function findAll({ category, type, condition, status = 'active' } = {}) {
 
 async function findById(id) {
   const { rows } = await pool.query(
-    `${BASE_SELECT} WHERE l.id = $1 GROUP BY l.id`,
+    `${BASE_SELECT} WHERE l.id = $1 GROUP BY l.id, u.name`,
     [id]
   );
   return rows[0] || null;
@@ -42,7 +44,7 @@ async function findById(id) {
 
 async function findBySeller(sellerId) {
   const { rows } = await pool.query(
-    `${BASE_SELECT} WHERE l.seller_id = $1 GROUP BY l.id ORDER BY l.created_at DESC`,
+    `${BASE_SELECT} WHERE l.seller_id = $1 GROUP BY l.id, u.name ORDER BY l.created_at DESC`,
     [sellerId]
   );
   return rows;

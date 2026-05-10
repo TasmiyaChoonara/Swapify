@@ -4,6 +4,7 @@ const crypto = require('crypto');
 const https = require('https');
 const auth = require('../middleware/auth');
 const payment = require('../models/payment');
+const pool = require('../config/db');
 
 function requireEnv(name) {
   const val = process.env[name];
@@ -109,6 +110,25 @@ router.post('/notify', express.urlencoded({ extended: false }), async (req, res)
 
     if (payment_status === 'COMPLETE' && paymentId) {
       await payment.markPaid(paymentId, pf_payment_id);
+
+      const paidPayment = await payment.findById(paymentId);
+      if (paidPayment?.transaction_id) {
+        await pool.query(
+          `UPDATE transactions SET status = 'complete' WHERE id = $1`,
+          [paidPayment.transaction_id]
+        );
+        const txRes = await pool.query(
+          `SELECT listing_id FROM transactions WHERE id = $1`,
+          [paidPayment.transaction_id]
+        );
+        const listingId = txRes.rows[0]?.listing_id;
+        if (listingId) {
+          await pool.query(
+            `UPDATE listings SET status = 'sold', updated_at = NOW() WHERE id = $1`,
+            [listingId]
+          );
+        }
+      }
     }
 
     return res.sendStatus(200);
