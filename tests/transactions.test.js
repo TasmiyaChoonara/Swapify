@@ -34,19 +34,21 @@ beforeEach(() => {
 
 describe('GET /api/transactions', () => {
   test('400 when listing_id query param is missing', async () => {
-    // GET route is defined before auth middleware in transactions.js, so no token required
-    const res = await request(app).get('/api/transactions');
+    const res = await request(app)
+      .get('/api/transactions')
+      .set('Authorization', STUDENT_TOKEN);
     expect(res.status).toBe(400);
     expect(res.body.error).toBe('listing_id is required');
   });
 
-  test('500 when listing_id present but req.user is undefined (auth not applied to GET)', async () => {
-    // The GET route is registered before router.use(auth), so req.user is never set.
-    // Accessing req.user.id throws TypeError which the catch block returns as 500.
+  test('500 when listing_id present but pool.query throws', async () => {
+    pool.query.mockRejectedValue(new Error('DB unavailable'));
     const res = await request(app)
       .get('/api/transactions')
+      .set('Authorization', STUDENT_TOKEN)
       .query({ listing_id: 'listing-1' });
     expect(res.status).toBe(500);
+    expect(res.body).toHaveProperty('error');
   });
 });
 

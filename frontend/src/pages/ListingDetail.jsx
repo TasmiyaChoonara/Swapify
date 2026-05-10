@@ -162,7 +162,7 @@ export default function ListingDetail() {
     }
   }
 
-  const { title, description, price, condition, type, category, images, created_at, seller_id } = listing
+  const { title, description, price, condition, type, category, images, created_at, seller_id, seller_name } = listing
   const thumbs = images ?? []
   const displayPrice = type === 'trade' ? 'Trade only' : price != null ? `R${parseFloat(price).toFixed(2)}` : '—'
   const isBuyer = isSignedIn && seller_id !== userId
@@ -229,12 +229,21 @@ export default function ListingDetail() {
 
           {returningFromPayFast && <PaymentCapture />}
 
+          {isSignedIn && isBuyer && (
+            <div className="detail-card" style={{ padding: '.75rem 1rem' }}>
+              <p style={{ fontSize: '.85rem', margin: 0, color: 'var(--text)' }}>
+                <span className="badge badge-purple" style={{ marginRight: '.5rem', verticalAlign: 'middle' }}>Buyer</span>
+                You are buying from <strong>{seller_name ?? 'this seller'}</strong>
+              </p>
+            </div>
+          )}
+
           {isLoaded && isSignedIn && isBuyer && isForSale && !returningFromPayFast && (
             <PaymentPanel listing={listing} />
           )}
 
           {/* ── Trade slot booking card ── */}
-          {isSignedIn && isBuyer && isTrade && (
+          {isSignedIn && isBuyer && isTrade && tradeId && (
             <div className="detail-card">
               <h3 style={{ color: 'var(--text)', marginBottom: '.5rem' }}>Interested in a Trade?</h3>
               <p style={{ fontSize: '.875rem', marginBottom: '1.25rem' }}>
@@ -294,7 +303,12 @@ export default function ListingDetail() {
           {isSignedIn && (isAdmin || seller_id === userId) && (
             <div className="detail-card" style={{ borderColor: 'rgba(239,68,68,.3)' }}>
               <h3 style={{ color: 'var(--text)', marginBottom: '.5rem' }}>
-                {isAdmin && seller_id !== userId ? 'Admin Actions' : 'Manage Listing'}
+                {isAdmin && seller_id !== userId ? 'Admin Actions' : (
+                  <>
+                    <span className="badge badge-green" style={{ marginRight: '.5rem', verticalAlign: 'middle' }}>Seller</span>
+                    Manage Listing
+                  </>
+                )}
               </h3>
               {deleteError && <p className="error-msg" style={{ marginBottom: '.75rem' }}>{deleteError}</p>}
               <button
