@@ -2,7 +2,11 @@ const pool = require('../config/db');
 
 const getMessagesByThread = async (threadId) => {
   const res = await pool.query(
-    'SELECT * FROM messages WHERE thread_id=$1 ORDER BY sent_at ASC',
+    `SELECT m.*, u.name AS sender_name
+     FROM messages m
+     LEFT JOIN users u ON u.id = m.sender_id
+     WHERE m.thread_id = $1
+     ORDER BY m.sent_at ASC`,
     [threadId]
   );
   return res.rows;
@@ -10,7 +14,14 @@ const getMessagesByThread = async (threadId) => {
 
 const createMessage = async (threadId, senderId, content) => {
   const res = await pool.query(
-    'INSERT INTO messages (thread_id, sender_id, content) VALUES ($1,$2,$3) RETURNING *',
+    `WITH inserted AS (
+       INSERT INTO messages (thread_id, sender_id, content)
+       VALUES ($1, $2, $3)
+       RETURNING *
+     )
+     SELECT i.*, u.name AS sender_name
+     FROM inserted i
+     LEFT JOIN users u ON u.id = i.sender_id`,
     [threadId, senderId, content]
   );
   return res.rows[0];
