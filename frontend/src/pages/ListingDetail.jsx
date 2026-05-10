@@ -84,18 +84,20 @@ export default function ListingDetail() {
   const navigate = useNavigate()
   const { isSignedIn, isLoaded } = useAuth()
   const { isAdmin, userId } = useRole()
-  const [listing, setListing]         = useState(null)
-  const [mainImg, setMainImg]         = useState(null)
-  const [loading, setLoading]         = useState(true)
-  const [error, setError]             = useState(null)
-  const [deleting, setDeleting]       = useState(false)
-  const [deleteError, setDeleteError] = useState(null)
-  const [tradeId, setTradeId]     = useState(null)
-  const [chatThreadId, setChatThreadId]   = useState(null)
-  const [chatOpen, setChatOpen]           = useState(false)
-  const [chatLoading, setChatLoading]     = useState(false)
+  const [listing, setListing]                     = useState(null)
+  const [mainImg, setMainImg]                     = useState(null)
+  const [loading, setLoading]                     = useState(true)
+  const [error, setError]                         = useState(null)
+  const [deleting, setDeleting]                   = useState(false)
+  const [deleteError, setDeleteError]             = useState(null)
+  const [tradeId, setTradeId]                     = useState(null)
+  const [chatThreadId, setChatThreadId]           = useState(null)
+  const [chatOpen, setChatOpen]                   = useState(false)
+  const [chatLoading, setChatLoading]             = useState(false)
   const [sellerTradesCount, setSellerTradesCount] = useState(null)
   const [sellerRating, setSellerRating]           = useState(null)
+  const [sellerThreads, setSellerThreads]         = useState([])
+  const [activeSellerThread, setActiveSellerThread] = useState(null)
 
   const urlParams = new URLSearchParams(window.location.search)
   const returningFromPayFast = urlParams.get('payfast') === 'success'
@@ -106,7 +108,6 @@ export default function ListingDetail() {
       .then(res => {
         setListing(res.data)
         setMainImg(res.data.images?.[0] ?? null)
-        // Fetch seller's completed trades count (no auth required)
         const sellerId = res.data.seller_id
         if (sellerId) {
           api.get(`/users/${sellerId}/completed-transactions`)
@@ -142,13 +143,22 @@ export default function ListingDetail() {
   async function handleMessageSeller() {
     setChatLoading(true)
     try {
-      const res = await api.post('/threads', { listingId: id, buyerId: userId, sellerId: seller_id })
+      const res = await api.post('/threads', { listingId: id, buyerId: userId, sellerId: listing.seller_id })
       setChatThreadId(res.data.id)
       setChatOpen(true)
     } catch {
-      // thread creation failed — silently ignore so the UI doesn't break
+      // silently ignore
     } finally {
       setChatLoading(false)
+    }
+  }
+
+  async function handleViewInbox() {
+    try {
+      const res = await api.get(`/threads/listing/${id}`)
+      setSellerThreads(Array.isArray(res.data) ? res.data : [])
+    } catch (err) {
+      console.error('Failed to load threads:', err)
     }
   }
 
@@ -231,7 +241,7 @@ export default function ListingDetail() {
             </div>
           </div>
 
-          {/* ── Seller profile card — visible to all ── */}
+          {/* About the Seller */}
           <div className="detail-card">
             <h3 style={{ color: 'var(--text)', fontSize: '.95rem', marginBottom: '.75rem' }}>About the Seller</h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '.4rem' }}>
@@ -260,26 +270,7 @@ export default function ListingDetail() {
             <PaymentPanel listing={listing} />
           )}
 
-          {/* ── Trade slot booking card ── */}
-          {isSignedIn && isBuyer && isTrade && tradeId && (
-            <div className="detail-card">
-              <h3 style={{ color: 'var(--text)', marginBottom: '.5rem' }}>Interested in a Trade?</h3>
-              <p style={{ fontSize: '.875rem', marginBottom: '1.25rem' }}>
-                Book a campus trade slot to arrange a safe drop-off or collection.
-              </p>
-              {tradeId ? (
-                <Link to={`/book/${tradeId}`} className="btn btn-primary btn-full btn-lg">
-                  Book a Trade Slot
-                </Link>
-              ) : (
-                <button className="btn btn-primary btn-full btn-lg" onClick={() => navigate(`/book/${id}`)}>
-                  Book a Trade Slot
-                </button>
-              )}
-            </div>
-          )}
-
-          {/* ── Message Seller ── */}
+          {/* Buyer: Message Seller */}
           {isSignedIn && isBuyer && (
             <div className="detail-card">
               <h3 style={{ color: 'var(--text)', marginBottom: '.5rem' }}>Message Seller</h3>
@@ -293,11 +284,58 @@ export default function ListingDetail() {
                     onClick={handleMessageSeller}
                     disabled={chatLoading}
                   >
-                    {chatLoading ? 'Opening chat...' : '💬 Message Seller'}
+                    {chatLoading ? 'Opening chat...' : 'Message Seller'}
                   </button>
                 </>
               ) : (
                 <Chat threadId={chatThreadId} userId={userId} />
+              )}
+            </div>
+          )}
+
+          {/* Seller: View buyer messages */}
+          {isSignedIn && isSeller && (
+            <div className="detail-card">
+              <h3 style={{ color: 'var(--text)', marginBottom: '.5rem' }}>Buyer Messages</h3>
+              <button className="btn btn-outline btn-full" onClick={handleViewInbox} style={{ marginBottom: '1rem' }}>
+                Load Messages
+              </button>
+              {sellerThreads.length === 0 && (
+                <p style={{ fontSize: '.85rem', color: 'var(--text-muted)' }}>No messages yet — click Load Messages.</p>
+              )}
+              {sellerThreads.map(thread => (
+                <div key={thread.id} style={{ marginBottom: '.5rem' }}>
+                  <button
+                    className="btn btn-outline btn-full btn-sm"
+                    onClick={() => setActiveSellerThread(activeSellerThread === thread.id ? null : thread.id)}
+                  >
+                    {activeSellerThread === thread.id ? 'Hide' : 'View'} conversation
+                  </button>
+                  {activeSellerThread === thread.id && (
+                    <div style={{ marginTop: '.5rem' }}>
+                      <Chat threadId={thread.id} userId={userId} />
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Trade slot booking card */}
+          {isSignedIn && isBuyer && isTrade && (
+            <div className="detail-card">
+              <h3 style={{ color: 'var(--text)', marginBottom: '.5rem' }}>Interested in a Trade?</h3>
+              <p style={{ fontSize: '.875rem', marginBottom: '1.25rem' }}>
+                Book a campus trade slot to arrange a safe drop-off or collection.
+              </p>
+              {tradeId ? (
+                <Link to={`/book/${tradeId}`} className="btn btn-primary btn-full btn-lg">
+                  Book a Trade Slot
+                </Link>
+              ) : (
+                <button className="btn btn-primary btn-full btn-lg" onClick={() => navigate(`/book/${id}`)}>
+                  Book a Trade Slot
+                </button>
               )}
             </div>
           )}
