@@ -95,6 +95,7 @@ export default function ListingDetail() {
   const [chatOpen, setChatOpen]           = useState(false)
   const [chatLoading, setChatLoading]     = useState(false)
   const [sellerTradesCount, setSellerTradesCount] = useState(null)
+  const [sellerRating, setSellerRating]           = useState(null)
 
   const urlParams = new URLSearchParams(window.location.search)
   const returningFromPayFast = urlParams.get('payfast') === 'success'
@@ -110,6 +111,9 @@ export default function ListingDetail() {
         if (sellerId) {
           api.get(`/users/${sellerId}/completed-transactions`)
             .then(r => setSellerTradesCount(r.data.count))
+            .catch(() => {})
+          api.get(`/ratings/user/${sellerId}`)
+            .then(r => setSellerRating(r.data))
             .catch(() => {})
         }
       })
@@ -223,6 +227,20 @@ export default function ListingDetail() {
               <div className="stat">
                 <div className="stat-val">{sellerTradesCount ?? '—'}</div>
                 <div className="stat-key">Seller trades</div>
+              </div>
+            </div>
+          </div>
+
+          {/* ── Seller profile card — visible to all ── */}
+          <div className="detail-card">
+            <h3 style={{ color: 'var(--text)', fontSize: '.95rem', marginBottom: '.75rem' }}>About the Seller</h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '.4rem' }}>
+              <p style={{ margin: 0, fontWeight: 600, color: 'var(--text)' }}>{seller_name ?? '—'}</p>
+              <div style={{ display: 'flex', gap: '1.25rem', fontSize: '.8rem', color: 'var(--text-muted)', marginTop: '.25rem' }}>
+                <span>{sellerTradesCount != null ? `${sellerTradesCount} completed trade${sellerTradesCount !== 1 ? 's' : ''}` : 'No trades yet'}</span>
+                {sellerRating?.average != null && (
+                  <span>&#9733; {sellerRating.average.toFixed(1)} ({sellerRating.count} review{sellerRating.count !== 1 ? 's' : ''})</span>
+                )}
               </div>
             </div>
           </div>
