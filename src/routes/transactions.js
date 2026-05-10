@@ -13,7 +13,9 @@ async function attachDbUser(req, res, next) {
     res.status(500).json({ error: 'Failed to resolve user', message: err.message });
   }
 }
- router.get('/', async (req, res) => {
+router.use(auth, attachDbUser);
+
+router.get('/', async (req, res) => {
   try {
     const { listing_id } = req.query;
     if (!listing_id) return res.status(400).json({ error: 'listing_id is required' });
@@ -27,7 +29,6 @@ async function attachDbUser(req, res, next) {
     res.status(500).json({ error: err.message });
   }
 });
-router.use(auth, attachDbUser);
 
 router.post('/', async (req, res) => {
   try {
