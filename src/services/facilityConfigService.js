@@ -14,8 +14,8 @@ function validate({ dayOfWeek, openTime, closeTime, slotCapacity }) {
     return { error: 'openTime must be before closeTime' };
   }
   const capacity = Number(slotCapacity);
-  if (!Number.isInteger(capacity) || capacity < 1) {
-    return { error: 'slotCapacity must be a positive integer' };
+  if (!Number.isInteger(capacity) || capacity < 0) {
+    return { error: 'slotCapacity must be a non-negative integer (0 = closed)' };
   }
   return { dayOfWeek: Number(dayOfWeek), openTime, closeTime, slotCapacity: capacity };
 }

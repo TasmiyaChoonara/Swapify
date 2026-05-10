@@ -51,6 +51,7 @@ export default function Admin() {
   const [facilityConfig, setFacilityConfig] = useState([])
   const [configForm, setConfigForm] = useState({ dayOfWeek: 1, openTime: '08:00', closeTime: '17:00', slotCapacity: 10 })
   const [configSaving, setConfigSaving] = useState(false)
+  const [configResetting, setConfigResetting] = useState(false)
   const [configSuccess, setConfigSuccess] = useState(null)
   const [configError, setConfigError] = useState(null)
 
@@ -131,6 +132,31 @@ export default function Admin() {
       setConfigError(err.response?.data?.error ?? 'Failed to save config.')
     } finally {
       setConfigSaving(false)
+    }
+  }
+
+  async function handleResetDefaults() {
+    if (!window.confirm('Reset all 7 days to default schedule? This will overwrite the current configuration.')) return
+    setConfigResetting(true)
+    setConfigSuccess(null)
+    setConfigError(null)
+    try {
+      const defaults = [
+        { dayOfWeek: 0, openTime: '08:00', closeTime: '17:00', slotCapacity: 0 },  // Sun — closed
+        { dayOfWeek: 1, openTime: '08:00', closeTime: '17:00', slotCapacity: 10 }, // Mon
+        { dayOfWeek: 2, openTime: '08:00', closeTime: '17:00', slotCapacity: 10 }, // Tue
+        { dayOfWeek: 3, openTime: '08:00', closeTime: '17:00', slotCapacity: 10 }, // Wed
+        { dayOfWeek: 4, openTime: '08:00', closeTime: '17:00', slotCapacity: 10 }, // Thu
+        { dayOfWeek: 5, openTime: '08:00', closeTime: '17:00', slotCapacity: 10 }, // Fri
+        { dayOfWeek: 6, openTime: '08:00', closeTime: '17:00', slotCapacity: 0 },  // Sat — closed
+      ]
+      const results = await Promise.all(defaults.map(d => api.put('/facility-config', d)))
+      setFacilityConfig(results.map(r => r.data).sort((a, b) => a.day_of_week - b.day_of_week))
+      setConfigSuccess('Schedule reset to defaults: Mon–Fri 08:00–17:00 (cap 10), Sat–Sun closed.')
+    } catch (err) {
+      setConfigError(err.response?.data?.error ?? 'Failed to reset configuration.')
+    } finally {
+      setConfigResetting(false)
     }
   }
 
@@ -369,75 +395,96 @@ export default function Admin() {
             {isAdmin && (
               <section className="admin-section">
                 <h2 className="admin-section-title">Trade Facility Configuration</h2>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
-                  <div>
-                    <h3 style={{ color: 'var(--text)', fontSize: '.9rem', marginBottom: '.75rem' }}>Current Schedule</h3>
-                    {facilityConfig.length === 0 ? (
-                      <p style={{ color: 'var(--text-muted)', fontSize: '.875rem' }}>No configuration set yet.</p>
-                    ) : (
-                      <div className="admin-table-wrap">
-                        <table className="admin-table">
-                          <thead><tr><th>Day</th><th>Open</th><th>Close</th><th>Capacity</th></tr></thead>
-                          <tbody>
-                            {facilityConfig.map(c => (
-                              <tr key={c.id} style={{ cursor: 'pointer' }}
-                                onClick={() => setConfigForm({ dayOfWeek: c.day_of_week, openTime: c.open_time.slice(0, 5), closeTime: c.close_time.slice(0, 5), slotCapacity: c.slot_capacity })}
-                              >
-                                <td>{DAYS[c.day_of_week]}</td>
-                                <td className="admin-cell-muted">{c.open_time.slice(0, 5)}</td>
-                                <td className="admin-cell-muted">{c.close_time.slice(0, 5)}</td>
-                                <td className="admin-cell-muted">{c.slot_capacity}</td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    )}
-                  </div>
 
-                  <div>
-                    <h3 style={{ color: 'var(--text)', fontSize: '.9rem', marginBottom: '.75rem' }}>Update Day Config</h3>
-                    <form onSubmit={handleConfigSave} style={{ display: 'flex', flexDirection: 'column', gap: '.75rem' }}>
-                      <div>
-                        <label style={{ fontSize: '.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '.3rem' }}>Day of Week</label>
-                        <select className="admin-role-select" style={{ width: '100%' }}
-                          value={configForm.dayOfWeek}
-                          onChange={e => setConfigForm(f => ({ ...f, dayOfWeek: Number(e.target.value) }))}
-                        >
-                          {DAYS.map((d, i) => <option key={i} value={i}>{d}</option>)}
-                        </select>
-                      </div>
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '.5rem' }}>
-                        <div>
-                          <label style={{ fontSize: '.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '.3rem' }}>Open Time</label>
-                          <input type="time" value={configForm.openTime}
-                            onChange={e => setConfigForm(f => ({ ...f, openTime: e.target.value }))}
-                            style={{ width: '100%', padding: '.5rem .6rem', borderRadius: 'var(--radius)', border: '1px solid rgba(255,255,255,.12)', background: 'rgba(255,255,255,.05)', color: 'var(--text)', fontSize: '.875rem', boxSizing: 'border-box' }}
-                          />
-                        </div>
-                        <div>
-                          <label style={{ fontSize: '.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '.3rem' }}>Close Time</label>
-                          <input type="time" value={configForm.closeTime}
-                            onChange={e => setConfigForm(f => ({ ...f, closeTime: e.target.value }))}
-                            style={{ width: '100%', padding: '.5rem .6rem', borderRadius: 'var(--radius)', border: '1px solid rgba(255,255,255,.12)', background: 'rgba(255,255,255,.05)', color: 'var(--text)', fontSize: '.875rem', boxSizing: 'border-box' }}
-                          />
-                        </div>
-                      </div>
-                      <div>
-                        <label style={{ fontSize: '.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '.3rem' }}>Slot Capacity</label>
-                        <input type="number" min="1" value={configForm.slotCapacity}
-                          onChange={e => setConfigForm(f => ({ ...f, slotCapacity: Number(e.target.value) }))}
-                          style={{ width: '100%', padding: '.5rem .6rem', borderRadius: 'var(--radius)', border: '1px solid rgba(255,255,255,.12)', background: 'rgba(255,255,255,.05)', color: 'var(--text)', fontSize: '.875rem', boxSizing: 'border-box' }}
-                        />
-                      </div>
-                      {configError && <p style={{ fontSize: '.8rem', color: 'rgb(239,68,68)' }}>{configError}</p>}
-                      {configSuccess && <p style={{ fontSize: '.8rem', color: 'rgb(34,197,94)' }}>{configSuccess}</p>}
-                      <button type="submit" className="btn btn-primary" disabled={configSaving}>
-                        {configSaving ? 'Saving...' : 'Save Config'}
-                      </button>
-                    </form>
-                  </div>
+                {/* ── Read-only summary table: all 7 days ── */}
+                <h3 style={{ color: 'var(--text)', fontSize: '.9rem', marginBottom: '.75rem' }}>Current Schedule</h3>
+                <div className="admin-table-wrap" style={{ marginBottom: '1.5rem' }}>
+                  <table className="admin-table">
+                    <thead><tr><th>Day</th><th>Open</th><th>Close</th><th>Capacity</th></tr></thead>
+                    <tbody>
+                      {DAYS.map((dayName, i) => {
+                        const c = facilityConfig.find(cfg => cfg.day_of_week === i)
+                        const isClosed = c && c.slot_capacity === 0
+                        return (
+                          <tr
+                            key={i}
+                            style={{ cursor: c ? 'pointer' : 'default', opacity: isClosed ? 0.5 : 1 }}
+                            title={c ? 'Click to edit this day' : 'Not configured'}
+                            onClick={() => c && setConfigForm({
+                              dayOfWeek: c.day_of_week,
+                              openTime: c.open_time.slice(0, 5),
+                              closeTime: c.close_time.slice(0, 5),
+                              slotCapacity: c.slot_capacity,
+                            })}
+                          >
+                            <td>{dayName}</td>
+                            <td className="admin-cell-muted">{c ? c.open_time.slice(0, 5) : '—'}</td>
+                            <td className="admin-cell-muted">{c ? c.close_time.slice(0, 5) : '—'}</td>
+                            <td className="admin-cell-muted">
+                              {c == null ? '—' : isClosed
+                                ? <span className="badge badge-muted">Closed</span>
+                                : c.slot_capacity}
+                            </td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
                 </div>
+
+                {/* ── Update form ── */}
+                <h3 style={{ color: 'var(--text)', fontSize: '.9rem', marginBottom: '.75rem' }}>Update Day Config</h3>
+                <form onSubmit={handleConfigSave} style={{ display: 'flex', flexDirection: 'column', gap: '.75rem', maxWidth: '480px' }}>
+                  <div>
+                    <label style={{ fontSize: '.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '.3rem' }}>Day of Week</label>
+                    <select className="admin-role-select" style={{ width: '100%' }}
+                      value={configForm.dayOfWeek}
+                      onChange={e => setConfigForm(f => ({ ...f, dayOfWeek: Number(e.target.value) }))}
+                    >
+                      {DAYS.map((d, i) => <option key={i} value={i}>{d}</option>)}
+                    </select>
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '.5rem' }}>
+                    <div>
+                      <label style={{ fontSize: '.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '.3rem' }}>Open Time</label>
+                      <input type="time" value={configForm.openTime}
+                        onChange={e => setConfigForm(f => ({ ...f, openTime: e.target.value }))}
+                        style={{ width: '100%', padding: '.5rem .6rem', borderRadius: 'var(--radius)', border: '1px solid rgba(255,255,255,.12)', background: 'rgba(255,255,255,.05)', color: 'var(--text)', fontSize: '.875rem', boxSizing: 'border-box' }}
+                      />
+                    </div>
+                    <div>
+                      <label style={{ fontSize: '.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '.3rem' }}>Close Time</label>
+                      <input type="time" value={configForm.closeTime}
+                        onChange={e => setConfigForm(f => ({ ...f, closeTime: e.target.value }))}
+                        style={{ width: '100%', padding: '.5rem .6rem', borderRadius: 'var(--radius)', border: '1px solid rgba(255,255,255,.12)', background: 'rgba(255,255,255,.05)', color: 'var(--text)', fontSize: '.875rem', boxSizing: 'border-box' }}
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label style={{ fontSize: '.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '.3rem' }}>
+                      Slot Capacity <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(0 = closed)</span>
+                    </label>
+                    <input type="number" min="0" value={configForm.slotCapacity}
+                      onChange={e => setConfigForm(f => ({ ...f, slotCapacity: Number(e.target.value) }))}
+                      style={{ width: '100%', padding: '.5rem .6rem', borderRadius: 'var(--radius)', border: '1px solid rgba(255,255,255,.12)', background: 'rgba(255,255,255,.05)', color: 'var(--text)', fontSize: '.875rem', boxSizing: 'border-box' }}
+                    />
+                  </div>
+                  {configError && <p style={{ fontSize: '.8rem', color: 'rgb(239,68,68)', margin: 0 }}>{configError}</p>}
+                  {configSuccess && <p style={{ fontSize: '.8rem', color: 'rgb(34,197,94)', margin: 0 }}>{configSuccess}</p>}
+                  <div style={{ display: 'flex', gap: '.5rem' }}>
+                    <button type="submit" className="btn btn-primary" disabled={configSaving || configResetting}>
+                      {configSaving ? 'Saving...' : 'Save Config'}
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-outline"
+                      disabled={configSaving || configResetting}
+                      onClick={handleResetDefaults}
+                    >
+                      {configResetting ? 'Resetting...' : 'Reset to Defaults'}
+                    </button>
+                  </div>
+                </form>
               </section>
             )}
 
