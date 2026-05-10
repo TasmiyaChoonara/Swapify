@@ -28,7 +28,6 @@ function PaymentPanel({ listing }) {
     setError(null)
     try {
       const token = await getToken()
-  
       const txRes = await api.post('/transactions', { listingId: listing.id, type: 'sale' })
       const transactionId = txRes.data.id
       const result = await initiatePayFastPayment({
@@ -47,6 +46,7 @@ function PaymentPanel({ listing }) {
       setLoading(false)
     }
   }
+
   return (
     <div className="detail-card" style={{ borderColor: 'rgba(139,92,246,.3)' }}>
       <h3 style={{ color: 'var(--text)', marginBottom: '.25rem' }}>Buy This Item</h3>
@@ -84,11 +84,11 @@ export default function ListingDetail() {
   const navigate = useNavigate()
   const { isSignedIn, isLoaded } = useAuth()
   const { isAdmin, userId } = useRole()
-  const [listing, setListing]     = useState(null)
-  const [mainImg, setMainImg]     = useState(null)
-  const [loading, setLoading]     = useState(true)
-  const [error, setError]         = useState(null)
-  const [deleting, setDeleting]   = useState(false)
+  const [listing, setListing]         = useState(null)
+  const [mainImg, setMainImg]         = useState(null)
+  const [loading, setLoading]         = useState(true)
+  const [error, setError]             = useState(null)
+  const [deleting, setDeleting]       = useState(false)
   const [deleteError, setDeleteError] = useState(null)
   const [tradeId, setTradeId]     = useState(null)
   const [chatThreadId, setChatThreadId]   = useState(null)
@@ -121,7 +121,6 @@ export default function ListingDetail() {
       .finally(() => setLoading(false))
   }, [id])
 
-  // Fetch existing transaction for this listing so we can link to booking
   useEffect(() => {
     if (!id) return
     api.get(`/transactions?listing_id=${id}`)
@@ -169,9 +168,10 @@ export default function ListingDetail() {
   const { title, description, price, condition, type, category, images, created_at, seller_id, seller_name } = listing
   const thumbs = images ?? []
   const displayPrice = type === 'trade' ? 'Trade only' : price != null ? `R${parseFloat(price).toFixed(2)}` : '—'
-  const isBuyer = isSignedIn && seller_id !== userId
+  const isBuyer  = isSignedIn && seller_id !== userId
+  const isSeller = isSignedIn && seller_id === userId
   const isForSale = type === 'sale' || type === 'both'
-  const isTrade = type === 'trade' || type === 'both'
+  const isTrade   = type === 'trade' || type === 'both'
 
   return (
     <PageShell>
@@ -268,18 +268,12 @@ export default function ListingDetail() {
                 Book a campus trade slot to arrange a safe drop-off or collection.
               </p>
               {tradeId ? (
-                <Link
-                  to={`/book/${tradeId}`}
-                  className="btn btn-primary btn-full btn-lg"
-                >
-                  📅 Book a Trade Slot
+                <Link to={`/book/${tradeId}`} className="btn btn-primary btn-full btn-lg">
+                  Book a Trade Slot
                 </Link>
               ) : (
-                <button
-                  className="btn btn-primary btn-full btn-lg"
-                  onClick={() => navigate(`/book/${id}`)}
-                >
-                  📅 Book a Trade Slot
+                <button className="btn btn-primary btn-full btn-lg" onClick={() => navigate(`/book/${id}`)}>
+                  Book a Trade Slot
                 </button>
               )}
             </div>
