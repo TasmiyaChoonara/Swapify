@@ -4,6 +4,7 @@ jest.mock('../src/config/db', () => ({
 }));
 
 const paymentModel = require('../src/models/payment');
+const realPaymentModel = jest.requireActual('../src/models/payment');
 const pool = require('../src/config/db');
 const paymentService = require('../src/services/paymentService');
 
@@ -93,5 +94,84 @@ describe('paymentService.getPaymentByTransaction()', () => {
     paymentModel.findByTransactionId.mockResolvedValue({ id: PAYMENT_ID, status: 'pending' });
     const result = await paymentService.getPaymentByTransaction(TRANSACTION_ID);
     expect(result.id).toBe(PAYMENT_ID);
+  });
+});
+
+// ─── paymentModel (real implementation with mocked pool) ─────────────────────
+
+describe('paymentModel.findByTransactionId', () => {
+  test('returns payment when found', async () => {
+    const row = { id: 'pay-1', transaction_id: 'txn-1', status: 'pending' };
+    pool.query.mockResolvedValue({ rows: [row] });
+    const result = await realPaymentModel.findByTransactionId('txn-1');
+    expect(result).toEqual(row);
+    const [, values] = pool.query.mock.calls[0];
+    expect(values[0]).toBe('txn-1');
+  });
+
+  test('returns null when not found', async () => {
+    pool.query.mockResolvedValue({ rows: [] });
+    expect(await realPaymentModel.findByTransactionId('bad-txn')).toBeNull();
+  });
+});
+
+describe('paymentModel.findById', () => {
+  test('returns payment when found', async () => {
+    const row = { id: 'pay-1', status: 'pending' };
+    pool.query.mockResolvedValue({ rows: [row] });
+    expect(await realPaymentModel.findById('pay-1')).toEqual(row);
+  });
+
+  test('returns null when not found', async () => {
+    pool.query.mockResolvedValue({ rows: [] });
+    expect(await realPaymentModel.findById('bad-id')).toBeNull();
+  });
+});
+
+describe('paymentModel.create', () => {
+  test('inserts with pending status and returns record', async () => {
+    const row = { id: 'pay-1', transaction_id: 'txn-1', amount: 150, status: 'pending' };
+    pool.query.mockResolvedValue({ rows: [row] });
+    const result = await realPaymentModel.create({
+      transactionId: 'txn-1', amount: 150, onlineAmount: 150, cashShortfall: 0,
+    });
+    expect(result).toEqual(row);
+    const [sql, values] = pool.query.mock.calls[0];
+    expect(sql).toContain("'pending'");
+    expect(values).toContain('txn-1');
+    expect(values).toContain(150);
+  });
+});
+
+describe('paymentModel.markPaid', () => {
+  test('updates status to paid and returns record', async () => {
+    const row = { id: 'pay-1', status: 'paid' };
+    pool.query.mockResolvedValue({ rows: [row] });
+    const result = await realPaymentModel.markPaid('pay-1', 'pf-001');
+    expect(result).toEqual(row);
+    const [sql, values] = pool.query.mock.calls[0];
+    expect(sql).toContain("status = 'paid'");
+    expect(values[0]).toBe('pay-1');
+  });
+
+  test('returns null when payment not found', async () => {
+    pool.query.mockResolvedValue({ rows: [] });
+    expect(await realPaymentModel.markPaid('bad-id', 'pf-001')).toBeNull();
+  });
+});
+
+describe('paymentModel.markFailed', () => {
+  test('updates status to failed and returns record', async () => {
+    const row = { id: 'pay-1', status: 'failed' };
+    pool.query.mockResolvedValue({ rows: [row] });
+    const result = await realPaymentModel.markFailed('pay-1');
+    expect(result).toEqual(row);
+    const [sql] = pool.query.mock.calls[0];
+    expect(sql).toContain("status = 'failed'");
+  });
+
+  test('returns null when payment not found', async () => {
+    pool.query.mockResolvedValue({ rows: [] });
+    expect(await realPaymentModel.markFailed('bad-id')).toBeNull();
   });
 });
