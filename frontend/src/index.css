@@ -222,6 +222,58 @@ textarea { resize: vertical; min-height: 100px; }
 }
 .navbar-link:hover { color: var(--text); background: var(--surface); text-decoration: none; }
 
+/* ── Hamburger / mobile drawer ───────────────── */
+.nav-hamburger {
+  display: none; align-items: center; justify-content: center;
+  background: none; border: 1px solid rgba(255,255,255,.2);
+  cursor: pointer; color: var(--text); padding: .4rem .5rem;
+  border-radius: var(--radius-sm);
+  transition: background var(--transition);
+}
+.nav-hamburger:hover { background: var(--surface); }
+
+.nav-drawer-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,.55);
+  z-index: 300;
+}
+.nav-drawer {
+  position: fixed; top: 0; right: 0;
+  height: 100vh; width: 280px; max-width: 85vw;
+  background: var(--bg); border-left: 1px solid var(--border);
+  z-index: 301; display: flex; flex-direction: column;
+  padding: 1.25rem 1.5rem;
+  box-shadow: -4px 0 32px rgba(0,0,0,.4);
+  overflow-y: auto;
+}
+.nav-drawer-close {
+  align-self: flex-end; background: none;
+  border: 1px solid rgba(255,255,255,.15);
+  cursor: pointer; color: var(--text); padding: .35rem;
+  border-radius: var(--radius-sm);
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 1.5rem;
+  transition: background var(--transition);
+}
+.nav-drawer-close:hover { background: rgba(255,255,255,.08); }
+.nav-drawer-items { display: flex; flex-direction: column; }
+.nav-drawer-link {
+  display: block; padding: .9rem 0;
+  border-bottom: 1px solid var(--border);
+  color: var(--text); text-decoration: none;
+  font-size: 1rem; font-weight: 500;
+  transition: color var(--transition);
+}
+.nav-drawer-link:hover { color: var(--accent); text-decoration: none; }
+.nav-drawer-row {
+  padding: .9rem 0;
+  border-bottom: 1px solid var(--border);
+}
+.nav-drawer-actions {
+  display: flex; flex-direction: column; gap: .75rem; padding-top: 1.25rem;
+}
+.nav-drawer-btn { width: 100%; justify-content: center; }
+
 /* ── Hero ────────────────────────────────────── */
 .hero {
   padding: 5.5rem 0 4rem;
@@ -296,6 +348,8 @@ textarea { resize: vertical; min-height: 100px; }
   gap: 2.5rem; align-items: start; padding-top: 2rem;
 }
 @media (max-width: 760px) {
+  .navbar-links { display: none; }
+  .nav-hamburger { display: flex; }
   .detail-layout { grid-template-columns: 1fr; }
   .filter-bar { flex-direction: column; gap: .5rem; padding: 1rem; }
   .filter-bar .form-group { min-width: 0; width: 100%; flex: none; }

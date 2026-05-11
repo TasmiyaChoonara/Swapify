@@ -121,50 +121,110 @@ function NotificationBell() {
 export default function Navbar() {
   const { isSignedIn } = useAuth()
   const { isAdmin, isStaff } = useRole()
+  const [menuOpen, setMenuOpen] = useState(false)
+
+  function closeMenu() { setMenuOpen(false) }
 
   return (
-    <nav className="navbar">
-      <div className="container navbar-inner">
-        <Link to="/" className="navbar-brand">
-          <span className="swap-icon" aria-hidden="true">
-            <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M3 5h10M13 5l-2-2M13 5l-2 2" stroke="#fff" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
-              <path d="M15 13H5M5 13l2-2M5 13l2 2" stroke="#fff" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+    <>
+      <nav className="navbar">
+        <div className="container navbar-inner">
+          <Link to="/" className="navbar-brand" onClick={closeMenu}>
+            <span className="swap-icon" aria-hidden="true">
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M3 5h10M13 5l-2-2M13 5l-2 2" stroke="#fff" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M15 13H5M5 13l2-2M5 13l2 2" stroke="#fff" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </span>
+            Swap<span className="brand-accent">ify</span>
+          </Link>
+
+          <div className="navbar-links">
+            <Link to="/" className="navbar-link">Home</Link>
+
+            {isSignedIn ? (
+              <>
+                {isAdmin && (
+                  <Link to="/admin" className="navbar-link">Admin Panel</Link>
+                )}
+                {(isStaff || isAdmin) && (
+                  <Link to="/staff" className="navbar-link">Staff Dashboard</Link>
+                )}
+                <Link to="/my-bookings" className="navbar-link">My Bookings</Link>
+                <Link to="/listings/new" className="btn btn-primary btn-sm">
+                  + Sell Item
+                </Link>
+                <NotificationBell />
+                <UserButton afterSignOutUrl="/" />
+              </>
+            ) : (
+              <>
+                <SignInButton mode="modal">
+                  <button className="btn btn-ghost btn-sm">Sign In</button>
+                </SignInButton>
+                <SignUpButton mode="modal">
+                  <button className="btn btn-primary btn-sm">Get Started</button>
+                </SignUpButton>
+              </>
+            )}
+          </div>
+
+          <button
+            className="nav-hamburger"
+            onClick={() => setMenuOpen(o => !o)}
+            aria-label="Open menu"
+            aria-expanded={menuOpen}
+          >
+            <svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M3 6h16M3 11h16M3 16h16" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
             </svg>
-          </span>
-          Swap<span className="brand-accent">ify</span>
-        </Link>
-
-        <div className="navbar-links">
-          <Link to="/" className="navbar-link">Home</Link>
-
-          {isSignedIn ? (
-            <>
-              {isAdmin && (
-                <Link to="/admin" className="navbar-link">Admin Panel</Link>
-              )}
-              {(isStaff || isAdmin) && (
-                <Link to="/staff" className="navbar-link">Staff Dashboard</Link>
-              )}
-              <Link to="/my-bookings" className="navbar-link">My Bookings</Link>
-              <Link to="/listings/new" className="btn btn-primary btn-sm">
-                + Sell Item
-              </Link>
-              <NotificationBell />
-              <UserButton afterSignOutUrl="/" />
-            </>
-          ) : (
-            <>
-              <SignInButton mode="modal">
-                <button className="btn btn-ghost btn-sm">Sign In</button>
-              </SignInButton>
-              <SignUpButton mode="modal">
-                <button className="btn btn-primary btn-sm">Get Started</button>
-              </SignUpButton>
-            </>
-          )}
+          </button>
         </div>
-      </div>
-    </nav>
+      </nav>
+
+      {menuOpen && (
+        <div className="nav-drawer-overlay" onClick={closeMenu}>
+          <div className="nav-drawer" onClick={e => e.stopPropagation()}>
+            <button className="nav-drawer-close" onClick={closeMenu} aria-label="Close menu">
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M3 3l12 12M15 3L3 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+              </svg>
+            </button>
+
+            <nav className="nav-drawer-items">
+              <Link to="/" className="nav-drawer-link" onClick={closeMenu}>Home</Link>
+
+              {isSignedIn ? (
+                <>
+                  {isAdmin && (
+                    <Link to="/admin" className="nav-drawer-link" onClick={closeMenu}>Admin Panel</Link>
+                  )}
+                  {(isStaff || isAdmin) && (
+                    <Link to="/staff" className="nav-drawer-link" onClick={closeMenu}>Staff Dashboard</Link>
+                  )}
+                  <Link to="/my-bookings" className="nav-drawer-link" onClick={closeMenu}>My Bookings</Link>
+                  <Link to="/listings/new" className="nav-drawer-link" onClick={closeMenu}>+ Sell Item</Link>
+                  <div className="nav-drawer-row">
+                    <NotificationBell />
+                  </div>
+                  <div className="nav-drawer-row">
+                    <UserButton afterSignOutUrl="/" />
+                  </div>
+                </>
+              ) : (
+                <div className="nav-drawer-actions">
+                  <SignInButton mode="modal">
+                    <button className="btn btn-ghost btn-sm nav-drawer-btn" onClick={closeMenu}>Sign In</button>
+                  </SignInButton>
+                  <SignUpButton mode="modal">
+                    <button className="btn btn-primary btn-sm nav-drawer-btn" onClick={closeMenu}>Get Started</button>
+                  </SignUpButton>
+                </div>
+              )}
+            </nav>
+          </div>
+        </div>
+      )}
+    </>
   )
 }
