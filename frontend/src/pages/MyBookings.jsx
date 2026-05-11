@@ -13,9 +13,9 @@ function formatSlotTime(isoString) {
 
 const STATUS_BADGE = {
   booked:    { label: 'Booked',    color: 'badge-purple' },
-  confirmed: { label: 'Confirmed', color: 'badge-green'  },
-  completed: { label: 'Completed', color: 'badge-muted'  },
-  cancelled: { label: 'Cancelled', color: 'badge-yellow' },
+  item_held: { label: 'Item Held', color: 'badge-yellow' },
+  complete:  { label: 'Complete',  color: 'badge-green'  },
+  cancelled: { label: 'Cancelled', color: 'badge-muted'  },
 }
 
 function PaymentBreakdown({ tradeId }) {
@@ -58,8 +58,99 @@ function PaymentBreakdown({ tradeId }) {
         background: isSettled ? 'rgba(34,197,94,.15)' : 'rgba(251,146,60,.15)',
         color: isSettled ? 'rgb(34,197,94)' : 'rgb(251,146,60)',
       }}>
-        {isSettled ? '✓ Fully settled' : '⏳ Cash pending'}
+        {isSettled ? 'Fully settled' : 'Cash pending'}
       </span>
+    </div>
+  )
+}
+
+function RatingForm({ booking, currentUserId }) {
+  const [score, setScore]         = useState(0)
+  const [hover, setHover]         = useState(0)
+  const [comment, setComment]     = useState('')
+  const [submitted, setSubmitted] = useState(false)
+  const [loading, setLoading]     = useState(false)
+  const [error, setError]         = useState(null)
+
+  const revieweeId    = currentUserId === booking.buyer_id ? booking.seller_id : booking.buyer_id
+  const revieweeLabel = currentUserId === booking.buyer_id ? 'the seller' : 'the buyer'
+
+  if (submitted) {
+    return (
+      <div style={{ marginTop: '.75rem', padding: '.75rem', background: 'rgba(34,197,94,.08)', borderRadius: '8px', fontSize: '.875rem', color: 'rgb(34,197,94)' }}>
+        Rating submitted — thanks for the feedback!
+      </div>
+    )
+  }
+
+  async function handleSubmit() {
+    if (!score) { setError('Please select a star rating.'); return }
+    if (!booking.transaction_id) { setError('No transaction linked to this booking yet.'); return }
+    setLoading(true)
+    setError(null)
+    try {
+      await api.post('/ratings', {
+        transaction_id: booking.transaction_id,
+        reviewee_id:    revieweeId,
+        score,
+        comment: comment.trim() || undefined,
+      })
+      setSubmitted(true)
+    } catch (err) {
+      setError(err.response?.data?.error ?? 'Failed to submit rating.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <div style={{ marginTop: '.75rem', padding: '.9rem', background: 'rgba(139,92,246,.06)', borderRadius: '8px' }}>
+      <p style={{ fontSize: '.8rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '.6rem', textTransform: 'uppercase', letterSpacing: '.04em' }}>
+        Rate {revieweeLabel}
+      </p>
+      <div style={{ display: 'flex', gap: '4px', marginBottom: '.75rem' }}>
+        {[1, 2, 3, 4, 5].map(s => (
+          <button
+            key={s}
+            type="button"
+            onClick={() => setScore(s)}
+            onMouseEnter={() => setHover(s)}
+            onMouseLeave={() => setHover(0)}
+            style={{
+              background: 'none', border: 'none', cursor: 'pointer',
+              fontSize: '1.6rem', lineHeight: 1, padding: '0 2px',
+              color: s <= (hover || score) ? '#f59e0b' : 'rgba(255,255,255,.2)',
+              transition: 'color .1s',
+            }}
+            aria-label={`${s} star${s > 1 ? 's' : ''}`}
+          >&#9733;</button>
+        ))}
+        {score > 0 && (
+          <span style={{ fontSize: '.8rem', color: 'var(--text-muted)', alignSelf: 'center', marginLeft: '4px' }}>
+            {['', 'Poor', 'Fair', 'Good', 'Very good', 'Excellent'][score]}
+          </span>
+        )}
+      </div>
+      <textarea
+        value={comment}
+        onChange={e => setComment(e.target.value)}
+        placeholder="Leave a comment (optional)"
+        rows={2}
+        style={{
+          width: '100%', padding: '.5rem .75rem',
+          background: 'rgba(255,255,255,.05)', border: '1px solid rgba(255,255,255,.12)',
+          borderRadius: '6px', color: 'var(--text)', fontSize: '.875rem',
+          resize: 'vertical', marginBottom: '.6rem', fontFamily: 'inherit',
+        }}
+      />
+      {error && <p style={{ fontSize: '.8rem', color: 'rgb(239,68,68)', marginBottom: '.4rem' }}>{error}</p>}
+      <button
+        className="btn btn-primary btn-sm"
+        onClick={handleSubmit}
+        disabled={loading || !score}
+      >
+        {loading ? 'Submitting...' : 'Submit Rating'}
+      </button>
     </div>
   )
 }
@@ -99,7 +190,6 @@ export default function MyBookings() {
 
         {!loading && !error && bookings.length === 0 && (
           <div className="empty-state">
-            <div className="empty-icon">📅</div>
             <h3>No bookings yet</h3>
             <p>When you book or receive a trade slot, it will appear here.</p>
             <Link to="/" className="btn btn-primary" style={{ marginTop: '.5rem' }}>
@@ -112,15 +202,16 @@ export default function MyBookings() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '2rem' }}>
             {bookings.map(booking => {
               const { date, time } = formatSlotTime(booking.slot_time)
-              const isBuyer = booking.buyer_id === userId
-              const badge   = STATUS_BADGE[booking.status] ?? STATUS_BADGE.booked
+              const isBuyer    = booking.buyer_id === userId
+              const badge      = STATUS_BADGE[booking.status] ?? STATUS_BADGE.booked
+              const isComplete = booking.status === 'complete'
 
               return (
                 <div key={booking.id} className="detail-card" style={{ display: 'flex', flexDirection: 'column', gap: '.75rem' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '.5rem' }}>
                     <div>
                       <p style={{ fontSize: '.75rem', color: 'var(--text-muted)', marginBottom: '.2rem', textTransform: 'uppercase', letterSpacing: '.05em' }}>
-                        {isBuyer ? '🛒 You are the Buyer' : '🏷️ You are the Seller'}
+                        {isBuyer ? 'Buyer' : 'Seller'}
                       </p>
                       <h3 style={{ color: 'var(--text)', fontSize: '1rem', marginBottom: '.1rem' }}>
                         {booking.listing_title ?? 'Trade Listing'}
@@ -140,8 +231,11 @@ export default function MyBookings() {
                     </div>
                   </div>
 
-                  {/* Payment breakdown — only shown to buyer */}
                   {isBuyer && <PaymentBreakdown tradeId={booking.trade_id} />}
+
+                  {isComplete && (
+                    <RatingForm booking={booking} currentUserId={userId} />
+                  )}
 
                   <div style={{ display: 'flex', gap: '.5rem' }}>
                     <Link to={`/book/${booking.trade_id}`} className="btn btn-outline btn-sm">

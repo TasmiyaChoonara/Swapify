@@ -13,7 +13,6 @@ function formatDate(dateStr) {
   return date.toLocaleDateString([], { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
 }
 
-// Get today's date in YYYY-MM-DD format for the date input min value
 function today() {
   return new Date().toISOString().split('T')[0]
 }
@@ -21,7 +20,7 @@ function today() {
 export default function BookSlot() {
   const { trade_id } = useParams()
   const navigate = useNavigate()
-  const { isSignedIn, isLoaded, userId } = useAuth()
+  const { isSignedIn, isLoaded } = useAuth()
 
   const [selectedDate, setSelectedDate] = useState('')
   const [slots, setSlots]               = useState([])
@@ -33,7 +32,6 @@ export default function BookSlot() {
   const [existingBooking, setExisting]  = useState(null)
   const [loadingBooking, setLoadingBooking] = useState(true)
 
-  // Check if there's already a booking for this trade
   useEffect(() => {
     if (!trade_id) return
     api.get(`/bookings/${trade_id}`)
@@ -44,7 +42,6 @@ export default function BookSlot() {
       .finally(() => setLoadingBooking(false))
   }, [trade_id])
 
-  // Fetch available slots when date changes
   useEffect(() => {
     if (!selectedDate) { setSlots([]); return }
     setLoadingSlots(true)
@@ -64,16 +61,15 @@ export default function BookSlot() {
     setSubmitting(true)
     setError(null)
     try {
+      const slotIso = new Date(selectedSlot).toISOString()
       await api.post('/bookings', {
         trade_id,
-        buyer_id: userId,
-        seller_id: userId, // will be replaced with actual seller_id from transaction
-        slot_time: selectedSlot,
+        slot_time: slotIso,
       })
-      setSuccess(selectedSlot)
-      setExisting({ slot_time: selectedSlot, status: 'booked' })
+      setSuccess(slotIso)
+      setExisting({ slot_time: slotIso, status: 'booked' })
     } catch (err) {
-      setError(err.response?.data?.error ?? 'Failed to book slot. Please try again.')
+      setError(err.response?.data?.error ?? 'Server error. Please try again.')
     } finally {
       setSubmitting(false)
     }
@@ -83,7 +79,7 @@ export default function BookSlot() {
     <div className="page form-page">
       <div className="container form-container">
 
-        <Link to="/" className="back-link">← Back to listings</Link>
+        <Link to="/" className="back-link">Back to listings</Link>
 
         <div className="form-card">
           <div className="form-card-header">
@@ -91,34 +87,29 @@ export default function BookSlot() {
             <p>Select a date and available time slot for your campus exchange.</p>
           </div>
 
-          {/* ── Operating hours notice ── */}
           <div className="info-banner">
-            🕗 Slots are available Monday – Friday, <strong>08:00 – 18:00</strong>
+            Slots are available Monday - Friday, <strong>08:00 - 18:00</strong>
           </div>
 
-          {/* ── Existing booking ── */}
           {loadingBooking && <div className="spinner" />}
 
           {!loadingBooking && existingBooking && !success && (
             <div className="success-banner">
-              ✅ You already have a booking for this trade at{' '}
+              You already have a booking for this trade at{' '}
               <strong>{formatTime(existingBooking.slot_time)}</strong> —{' '}
               status: <strong>{existingBooking.status}</strong>
             </div>
           )}
 
-          {/* ── Success state ── */}
           {success && (
             <div className="success-banner">
-              ✅ Slot booked successfully for <strong>{formatTime(success)}</strong>!
+              Slot booked successfully for <strong>{formatTime(success)}</strong>.
               Both parties will see this booking.
             </div>
           )}
 
-          {/* ── Booking form ── */}
           {!existingBooking && !success && (
             <>
-              {/* Date picker */}
               <div className="form-group" style={{ marginTop: '1.5rem' }}>
                 <label>Select Date</label>
                 <input
@@ -129,7 +120,6 @@ export default function BookSlot() {
                 />
               </div>
 
-              {/* Slot grid */}
               {selectedDate && (
                 <div className="form-group">
                   <label>
@@ -174,7 +164,7 @@ export default function BookSlot() {
                   onClick={handleBook}
                   style={{ flex: 1 }}
                 >
-                  {submitting ? 'Booking…' : 'Confirm Booking'}
+                  {submitting ? 'Booking...' : 'Confirm Booking'}
                 </button>
                 <button
                   className="btn btn-outline btn-lg"

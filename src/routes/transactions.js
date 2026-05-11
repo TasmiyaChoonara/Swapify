@@ -35,6 +35,15 @@ router.post('/', async (req, res) => {
     const { listingId, type } = req.body;
     if (!listingId || !type) return res.status(400).json({ error: 'listingId and type are required' });
 
+    const listingCheck = await pool.query(
+      `SELECT status FROM listings WHERE id = $1`,
+      [listingId]
+    );
+    if (listingCheck.rows.length === 0) return res.status(404).json({ error: 'Listing not found' });
+    if (listingCheck.rows[0].status === 'sold') {
+      return res.status(400).json({ error: 'This item has already been sold.' });
+    }
+
     const { rows } = await pool.query(
       `INSERT INTO transactions (listing_id, buyer_id, type, status)
        VALUES ($1, $2, $3, 'active')

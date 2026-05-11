@@ -255,7 +255,13 @@ export default function ListingDetail() {
             </div>
           </div>
 
-          {returningFromPayFast && <PaymentCapture />}
+          {listing.status === 'sold' && !returningFromPayFast && (
+  <div className="detail-card" style={{ borderColor: 'rgba(239,68,68,.3)' }}>
+    <p style={{ color: 'rgb(239,68,68)', fontWeight: 600, marginBottom: '.25rem' }}>This item has been sold</p>
+    <p style={{ fontSize: '.875rem' }}>This listing is no longer available for purchase.</p>
+  </div>
+)}
+{returningFromPayFast && <PaymentCapture />}
 
           {isSignedIn && isBuyer && (
             <div className="detail-card" style={{ padding: '.75rem 1rem' }}>
@@ -266,7 +272,7 @@ export default function ListingDetail() {
             </div>
           )}
 
-          {isLoaded && isSignedIn && isBuyer && isForSale && !returningFromPayFast && (
+          {isLoaded && isSignedIn && isBuyer && isForSale && listing.status !== 'sold' && !returningFromPayFast && (
             <PaymentPanel listing={listing} />
           )}
 
