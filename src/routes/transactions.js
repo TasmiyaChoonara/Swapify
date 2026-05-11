@@ -50,6 +50,16 @@ router.post('/', async (req, res) => {
        RETURNING *`,
       [listingId, req.user.id, type]
     );
+
+    // Mark listing as sold immediately so it is removed from the home page
+    // and cannot be purchased again while payment is in progress
+    if (type === 'sale') {
+      await pool.query(
+        `UPDATE listings SET status = 'sold', updated_at = NOW() WHERE id = $1`,
+        [listingId]
+      );
+    }
+
     res.status(201).json(rows[0]);
   } catch (err) {
     res.status(500).json({ error: err.message });
