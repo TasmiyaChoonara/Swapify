@@ -72,8 +72,8 @@ function RatingForm({ booking, currentUserId }) {
   const [loading, setLoading]     = useState(false)
   const [error, setError]         = useState(null)
 
-  const revieweeId    = currentUserId === booking.buyer_id ? booking.seller_id : booking.buyer_id
-  const revieweeLabel = currentUserId === booking.buyer_id ? 'the seller' : 'the buyer'
+  const revieweeClerkId = currentUserId === booking.buyer_id ? booking.seller_id : booking.buyer_id
+  const revieweeLabel   = currentUserId === booking.buyer_id ? 'the seller' : 'the buyer'
 
   if (submitted) {
     return (
@@ -89,15 +89,20 @@ function RatingForm({ booking, currentUserId }) {
     setLoading(true)
     setError(null)
     try {
+      // Resolve the Clerk ID to an internal database UUID
+      const userRes = await api.get(`/users/by-clerk/${revieweeClerkId}`)
+      const revieweeDbId = userRes.data?.id
+      if (!revieweeDbId) throw new Error('Could not resolve user.')
+
       await api.post('/ratings', {
         transaction_id: booking.transaction_id,
-        reviewee_id:    revieweeId,
+        reviewee_id:    revieweeDbId,
         score,
         comment: comment.trim() || undefined,
       })
       setSubmitted(true)
     } catch (err) {
-      setError(err.response?.data?.error ?? 'Failed to submit rating.')
+      setError(err.response?.data?.error ?? err.message ?? 'Failed to submit rating.')
     } finally {
       setLoading(false)
     }
