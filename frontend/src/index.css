@@ -295,7 +295,7 @@ textarea { resize: vertical; min-height: 100px; }
   display: grid; grid-template-columns: 1fr 360px;
   gap: 2.5rem; align-items: start; padding-top: 2rem;
 }
-@media (max-width: 760px) { .detail-layout { grid-template-columns: 1fr; } }
+@media (max-width: 760px) { .detail-layout { grid-template-columns: 1fr; } .detail-image-wrap { position: static; top: auto; } }
 
 .detail-image-wrap { position: sticky; top: 80px; }
 .detail-main-img {
