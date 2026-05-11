@@ -295,9 +295,19 @@ textarea { resize: vertical; min-height: 100px; }
   display: grid; grid-template-columns: 1fr 360px;
   gap: 2.5rem; align-items: start; padding-top: 2rem;
 }
-@media (max-width: 760px) { .detail-layout { grid-template-columns: 1fr; } .detail-image-wrap { position: static; top: auto; } }
+@media (max-width: 760px) {
+  .detail-layout { grid-template-columns: 1fr; }
+  .filter-bar { flex-direction: column; gap: .5rem; padding: 1rem; }
+  .filter-bar .form-group { min-width: 0; width: 100%; flex: none; }
+  .filter-bar .form-group select { width: 100%; }
+  .filter-actions { width: 100%; align-self: stretch; }
+  .filter-actions .btn { flex: 1; min-height: 44px; font-size: .9rem; }
+  .search-bar { max-width: 100%; }
+  .search-bar .search-btn { min-height: 44px; }
+}
 
-.detail-image-wrap { position: sticky; top: 80px; }
+.detail-image-wrap { position: static; }
+@media (min-width: 761px) { .detail-image-wrap { position: sticky; top: 80px; } }
 .detail-main-img {
   width: 100%; border-radius: var(--radius-lg);
   border: 1px solid var(--border); object-fit: cover;
