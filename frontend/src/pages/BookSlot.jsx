@@ -62,10 +62,28 @@ export default function BookSlot() {
     setError(null)
     try {
       const slotIso = new Date(selectedSlot).toISOString()
+
+      // trade_id from the URL is the listing ID.
+      // First check if a transaction already exists for this listing,
+      // if not create one, then use that transaction ID for the booking.
+      let transactionId = null
+
+      const existingTx = await api.get(`/transactions?listing_id=${trade_id}`)
+      if (existingTx.data && existingTx.data.length > 0) {
+        transactionId = existingTx.data[0].id
+      } else {
+        const newTx = await api.post('/transactions', {
+          listingId: trade_id,
+          type: 'trade',
+        })
+        transactionId = newTx.data.id
+      }
+
       await api.post('/bookings', {
-        trade_id,
+        trade_id: transactionId,
         slot_time: slotIso,
       })
+
       setSuccess(slotIso)
       setExisting({ slot_time: slotIso, status: 'booked' })
     } catch (err) {
