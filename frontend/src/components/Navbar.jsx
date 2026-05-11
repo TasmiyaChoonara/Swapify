@@ -126,7 +126,12 @@ export default function Navbar() {
     <nav className="navbar">
       <div className="container navbar-inner">
         <Link to="/" className="navbar-brand">
-          <span className="swap-icon" aria-hidden="true">swapify</span>
+          <span className="swap-icon" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M3 5h10M13 5l-2-2M13 5l-2 2" stroke="#fff" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M15 13H5M5 13l2-2M5 13l2 2" stroke="#fff" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </span>
           Swap<span className="brand-accent">ify</span>
         </Link>
 
