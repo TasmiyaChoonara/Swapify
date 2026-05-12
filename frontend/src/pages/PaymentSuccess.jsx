@@ -1,16 +1,19 @@
 import { useEffect } from 'react'
 import { useSearchParams, Link } from 'react-router-dom'
-import api from '../services/api'
 
 export default function PaymentSuccess() {
   const [params] = useSearchParams()
   const listingId = params.get('listing')
+  const backendUrl = import.meta.env.VITE_BACKEND_URL
 
   useEffect(() => {
-    if (!listingId) return
-    api.post('/payfast/confirm-success', { listingId })
-      .catch(() => {})
-  }, [listingId])
+    if (!listingId || !backendUrl) return
+    fetch(`${backendUrl}/api/payfast/confirm-success`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ listingId }),
+    }).catch(() => {})
+  }, [listingId, backendUrl])
 
   return (
     <div className="page">
