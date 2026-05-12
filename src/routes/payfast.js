@@ -88,6 +88,7 @@ router.post('/initiate', auth, async (req, res) => {
     const clean = Object.fromEntries(Object.entries(paymentData).filter(([, v]) => v !== ''));
     const signature = generateSignature(clean, PF.passphrase);
 
+    console.log("[PayFast] signature string data:", JSON.stringify(clean));
     return res.json({ payfastUrl: `https://${PAYFAST_HOST}/eng/process`, paymentData: { ...clean, signature } });
   } catch (err) {
     console.error('[PayFast] initiate error:', err);
