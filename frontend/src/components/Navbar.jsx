@@ -5,6 +5,7 @@ import useRole from '../hooks/useRole'
 import api from '../services/api'
 
 function NotificationBell() {
+  const { isSignedIn } = useAuth()
   const [notifications, setNotifications] = useState([])
   const [open, setOpen]                   = useState(false)
   const ref = useRef(null)
@@ -19,10 +20,11 @@ function NotificationBell() {
   }
 
   useEffect(() => {
+    if (!isSignedIn) return
     fetchNotifications()
     const interval = setInterval(fetchNotifications, 30000)
     return () => clearInterval(interval)
-  }, [])
+  }, [isSignedIn])
 
   useEffect(() => {
     function handleClickOutside(e) {
@@ -51,7 +53,7 @@ function NotificationBell() {
   return (
     <div ref={ref} style={{ position: 'relative' }}>
       <button
-        onClick={() => setOpen(o => !o)}
+        onClick={() => { setOpen(o => !o); if (!open) fetchNotifications() }}
         style={{
           background: 'none', border: '1px solid rgba(255,255,255,.2)',
           cursor: 'pointer', color: 'var(--text)', fontSize: '.8rem',
