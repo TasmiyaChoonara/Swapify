@@ -86,7 +86,8 @@ router.post('/initiate', auth, async (req, res) => {
     };
 
     const clean = Object.fromEntries(Object.entries(paymentData).filter(([, v]) => v !== ''));
-    const signature = generateSignature(clean, PF.passphrase);
+    const { merchant_key: _mk, ...signData } = clean;
+    const signature = generateSignature(signData, PF.passphrase);
 
     return res.json({ payfastUrl: `https://${PAYFAST_HOST}/eng/process`, paymentData: { ...clean, signature } });
   } catch (err) {
@@ -139,8 +140,6 @@ router.post('/notify', express.urlencoded({ extended: false }), async (req, res)
   }
 });
 
-module.exports = router;
-
 router.post('/confirm-success', auth, async (req, res) => {
   try {
     const { transactionId } = req.body;
@@ -177,8 +176,10 @@ router.post('/confirm-success', auth, async (req, res) => {
       );
     }
 
-    res.json({ success: true })
+    res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
+
+module.exports = router;
