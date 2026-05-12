@@ -5,12 +5,22 @@ const VALID_ROLES = ['student', 'staff', 'admin'];
 async function getOrCreateUser(clerkUser) {
   const authId = clerkUser.id;
   const existing = await userModel.findByAuthId(authId);
-  if (existing) return existing;
 
   const email = clerkUser.emailAddresses?.[0]?.emailAddress || `${authId}@placeholder.com`;
   const firstName = clerkUser.firstName || '';
   const lastName = clerkUser.lastName || '';
   const name = `${firstName} ${lastName}`.trim() || email;
+
+  if (existing) {
+    // Update name and email if they were placeholder values
+    const isPlaceholderName = existing.name && existing.name.includes('@placeholder.com');
+    const isPlaceholderEmail = existing.email && existing.email.includes('@placeholder.com');
+    if ((isPlaceholderName || isPlaceholderEmail) && (firstName || lastName)) {
+      await userModel.updateNameAndEmail(existing.id, name, email);
+      return { ...existing, name, email };
+    }
+    return existing;
+  }
 
   return userModel.create({ name, email, authId });
 }

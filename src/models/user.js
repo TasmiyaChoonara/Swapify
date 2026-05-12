@@ -44,4 +44,13 @@ async function findAll() {
   return rows;
 }
 
-module.exports = { findByAuthId, findById, findAll, create, updateRole };
+
+async function updateNameAndEmail(id, name, email) {
+  const { rows } = await pool.query(
+    `UPDATE users SET name = $1, email = $2 WHERE id = $3 RETURNING *`,
+    [name, email, id]
+  );
+  return rows[0] || null;
+}
+module.exports = { findByAuthId, findById, findAll, create, updateRole, updateNameAndEmail };
+
