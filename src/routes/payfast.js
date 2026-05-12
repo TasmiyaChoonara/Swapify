@@ -86,8 +86,7 @@ router.post('/initiate', auth, async (req, res) => {
     };
 
     const clean = Object.fromEntries(Object.entries(paymentData).filter(([, v]) => v !== ''));
-    const { merchant_key: _mk, ...signData } = clean;
-    const signature = generateSignature(signData, PF.passphrase);
+    const signature = generateSignature(clean, PF.passphrase);
 
     return res.json({ payfastUrl: `https://${PAYFAST_HOST}/eng/process`, paymentData: { ...clean, signature } });
   } catch (err) {
