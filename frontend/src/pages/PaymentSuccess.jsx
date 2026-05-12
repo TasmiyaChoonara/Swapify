@@ -4,23 +4,14 @@ import api from '../services/api'
 
 export default function PaymentSuccess() {
   const [params] = useSearchParams()
-  const listingId = params.get('listing')
-  const [confirmed, setConfirmed] = useState(false)
+  const listingId     = params.get('listing')
+  const transactionId = params.get('transaction')
 
   useEffect(() => {
-    if (!listingId) return
-    // Look up the transaction for this listing and confirm the payment
-    api.get(`/transactions?listing_id=${listingId}`)
-      .then(res => {
-        const transactions = res.data
-        if (transactions && transactions.length > 0) {
-          const transactionId = transactions[0].id
-          return api.post('/payfast/confirm-success', { transactionId })
-        }
-      })
-      .then(() => setConfirmed(true))
-      .catch(() => setConfirmed(true))
-  }, [listingId])
+    if (!transactionId) return
+    api.post('/payfast/confirm-success', { transactionId })
+      .catch(() => {})
+  }, [transactionId])
 
   return (
     <div className="page">
