@@ -73,7 +73,7 @@ router.post('/initiate', auth, async (req, res) => {
     const paymentData = {
       merchant_id:      PF.merchant_id,
       merchant_key:     PF.merchant_key,
-      return_url:       `${FRONTEND_URL}/payment/success?listing=${listingId}%26transaction=${transactionId}`,
+      return_url:       `${FRONTEND_URL}/payment/success?listing=${listingId}`,
       cancel_url:       `${FRONTEND_URL}/payment/cancel?listing=${listingId}`,
       notify_url:       `${BACKEND_URL}/api/payfast/notify`,
       name_first:       nameFirst,
