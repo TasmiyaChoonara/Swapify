@@ -73,7 +73,7 @@ router.post('/initiate', auth, async (req, res) => {
     const paymentData = {
       merchant_id:      PF.merchant_id,
       merchant_key:     PF.merchant_key,
-      return_url:       `${FRONTEND_URL}/payment/success?listing=${listingId}`,
+      return_url:       `${FRONTEND_URL}/payment/success?listing=${listingId}&transaction=${transactionId}`,
       cancel_url:       `${FRONTEND_URL}/payment/cancel?listing=${listingId}`,
       notify_url:       `${BACKEND_URL}/api/payfast/notify`,
       name_first:       nameFirst,
@@ -139,6 +139,8 @@ router.post('/notify', express.urlencoded({ extended: false }), async (req, res)
   }
 });
 
+module.exports = router;
+
 router.post('/confirm-success', auth, async (req, res) => {
   try {
     const { transactionId } = req.body;
@@ -175,10 +177,8 @@ router.post('/confirm-success', auth, async (req, res) => {
       );
     }
 
-    res.json({ success: true });
+    res.json({ success: true })
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
-
-module.exports = router;
