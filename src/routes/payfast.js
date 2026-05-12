@@ -73,7 +73,7 @@ router.post('/initiate', auth, async (req, res) => {
     const paymentData = {
       merchant_id:      PF.merchant_id,
       merchant_key:     PF.merchant_key,
-      return_url:       `${FRONTEND_URL}/payment/success?listing=${listingId}`,
+      return_url:       `${FRONTEND_URL}/payment/success?listing=${listingId}&transaction=${transactionId}`,
       cancel_url:       `${FRONTEND_URL}/payment/cancel?listing=${listingId}`,
       notify_url:       `${BACKEND_URL}/api/payfast/notify`,
       name_first:       nameFirst,
@@ -140,3 +140,45 @@ router.post('/notify', express.urlencoded({ extended: false }), async (req, res)
 });
 
 module.exports = router;
+
+router.post('/confirm-success', auth, async (req, res) => {
+  try {
+    const { transactionId } = req.body;
+    if (!transactionId) return res.status(400).json({ error: 'transactionId required' });
+
+    const txRes = await pool.query(
+      `SELECT t.*, l.status AS listing_status
+       FROM transactions t
+       JOIN listings l ON l.id = t.listing_id
+       WHERE t.id = $1`,
+      [transactionId]
+    );
+    if (txRes.rows.length === 0) return res.status(404).json({ error: 'Transaction not found' });
+
+    const tx = txRes.rows[0];
+
+    const paymentRes = await pool.query(
+      `SELECT * FROM payments WHERE transaction_id = $1`,
+      [transactionId]
+    );
+
+    if (paymentRes.rows.length > 0) {
+      await pool.query(
+        `UPDATE transactions SET status = 'complete' WHERE id = $1`,
+        [transactionId]
+      );
+      await pool.query(
+        `UPDATE listings SET status = 'sold', updated_at = NOW() WHERE id = $1`,
+        [tx.listing_id]
+      );
+      await pool.query(
+        `UPDATE payments SET status = 'paid', paid_at = NOW(), updated_at = NOW() WHERE transaction_id = $1`,
+        [transactionId]
+      );
+    }
+
+    res.json({ success: true })
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});

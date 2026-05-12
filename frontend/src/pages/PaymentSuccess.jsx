@@ -1,8 +1,17 @@
+import { useEffect, useState } from 'react'
 import { useSearchParams, Link } from 'react-router-dom'
+import api from '../services/api'
 
 export default function PaymentSuccess() {
   const [params] = useSearchParams()
-  const listingId = params.get('listing')
+  const listingId     = params.get('listing')
+  const transactionId = params.get('transaction')
+
+  useEffect(() => {
+    if (!transactionId) return
+    api.post('/payfast/confirm-success', { transactionId })
+      .catch(() => {})
+  }, [transactionId])
 
   return (
     <div className="page">
@@ -22,6 +31,7 @@ export default function PaymentSuccess() {
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             margin: '0 auto',
             fontSize: '1.75rem',
+            color: 'rgb(34,197,94)',
           }}>
             &#10003;
           </div>
