@@ -76,13 +76,13 @@ router.post('/initiate', auth, async (req, res) => {
       return_url:       `${FRONTEND_URL}/payment/success?listing=${listingId}%26transaction=${transactionId}`,
       cancel_url:       `${FRONTEND_URL}/payment/cancel?listing=${listingId}`,
       notify_url:       `${BACKEND_URL}/api/payfast/notify`,
-      name_first:       nameFirst,
-      name_last:        nameLast,
+      name_first:       nameFirst.trim(),
+      name_last:        nameLast.trim(),
       email_address:    email,
       m_payment_id,
       amount:           total.toFixed(2),
       item_name:        itemName.trim(),
-      item_description: itemDescription,
+      item_description: itemDescription.trim(),
     };
 
     const clean = Object.fromEntries(Object.entries(paymentData).filter(([, v]) => v !== ''));
