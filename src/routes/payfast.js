@@ -81,7 +81,7 @@ router.post('/initiate', auth, async (req, res) => {
       email_address:    email,
       m_payment_id,
       amount:           total.toFixed(2),
-      item_name:        itemName,
+      item_name:        itemName.trim(),
       item_description: itemDescription,
     };
 
