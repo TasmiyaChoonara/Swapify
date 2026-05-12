@@ -1,17 +1,16 @@
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { useSearchParams, Link } from 'react-router-dom'
 import api from '../services/api'
 
 export default function PaymentSuccess() {
   const [params] = useSearchParams()
-  const listingId     = params.get('listing')
-  const transactionId = params.get('transaction')
+  const listingId = params.get('listing')
 
   useEffect(() => {
-    if (!transactionId) return
-    api.post('/payfast/confirm-success', { transactionId })
+    if (!listingId) return
+    api.post('/payfast/confirm-success', { listingId })
       .catch(() => {})
-  }, [transactionId])
+  }, [listingId])
 
   return (
     <div className="page">
@@ -35,16 +34,13 @@ export default function PaymentSuccess() {
           }}>
             &#10003;
           </div>
-
           <h1 style={{ fontSize: '1.5rem', fontWeight: 600, color: 'var(--text)' }}>
             Payment successful
           </h1>
-
           <p style={{ fontSize: '.95rem', color: 'var(--text-muted)', lineHeight: 1.6 }}>
             Your payment has been received. The item has been reserved for you.
             Head to My Bookings to arrange collection at the trade facility.
           </p>
-
           <div style={{ display: 'flex', gap: '.75rem', justifyContent: 'center', marginTop: '.5rem', flexWrap: 'wrap' }}>
             {listingId && (
               <Link to={`/listings/${listingId}`} className="btn btn-outline btn-lg">

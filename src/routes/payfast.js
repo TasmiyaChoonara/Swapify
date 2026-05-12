@@ -140,21 +140,25 @@ router.post('/notify', express.urlencoded({ extended: false }), async (req, res)
 });
 
 
-router.post('/confirm-success', auth, async (req, res) => {
+
+
+router.post('/confirm-success', async (req, res) => {
   try {
-    const { transactionId } = req.body;
-    if (!transactionId) return res.status(400).json({ error: 'transactionId required' });
+    const { listingId } = req.body;
+    if (!listingId) return res.status(400).json({ error: 'listingId required' });
 
     const txRes = await pool.query(
-      `SELECT t.*, l.status AS listing_status
-       FROM transactions t
-       JOIN listings l ON l.id = t.listing_id
-       WHERE t.id = $1`,
-      [transactionId]
+      `SELECT t.id FROM transactions t
+       WHERE t.listing_id = $1
+       AND t.status = 'active'
+       ORDER BY t.created_at DESC
+       LIMIT 1`,
+      [listingId]
     );
-    if (txRes.rows.length === 0) return res.status(404).json({ error: 'Transaction not found' });
 
-    const tx = txRes.rows[0];
+    if (txRes.rows.length === 0) return res.json({ success: true });
+
+    const transactionId = txRes.rows[0].id;
 
     const paymentRes = await pool.query(
       `SELECT * FROM payments WHERE transaction_id = $1`,
@@ -168,7 +172,7 @@ router.post('/confirm-success', auth, async (req, res) => {
       );
       await pool.query(
         `UPDATE listings SET status = 'sold', updated_at = NOW() WHERE id = $1`,
-        [tx.listing_id]
+        [listingId]
       );
       await pool.query(
         `UPDATE payments SET status = 'paid', paid_at = NOW(), updated_at = NOW() WHERE transaction_id = $1`,
@@ -176,7 +180,7 @@ router.post('/confirm-success', auth, async (req, res) => {
       );
     }
 
-    res.json({ success: true })
+    res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
