@@ -139,7 +139,6 @@ router.post('/notify', express.urlencoded({ extended: false }), async (req, res)
   }
 });
 
-module.exports = router;
 
 router.post('/confirm-success', auth, async (req, res) => {
   try {
@@ -182,3 +181,5 @@ router.post('/confirm-success', auth, async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+
+module.exports = router;
