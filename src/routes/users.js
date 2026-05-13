@@ -58,4 +58,13 @@ router.get("/by-clerk/:clerkId", async (req, res) => {
   }
 })
 
+router.delete("/:id", auth, attachDbUser, requireRole("admin"), async (req, res) => {
+  try {
+    await pool.query("DELETE FROM users WHERE id = $1", [req.params.id]);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = router;
