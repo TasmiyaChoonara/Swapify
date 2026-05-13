@@ -66,6 +66,8 @@ app.use('/api/messages', messageRoutes);
 app.use('/api/threads', threadRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/ratings', ratingsRouter);
+const notificationsRouter = require('./routes/notifications');
+app.use('/api/notifications', notificationsRouter);
 
 app.get('/health', async (req, res) => {
   try {
