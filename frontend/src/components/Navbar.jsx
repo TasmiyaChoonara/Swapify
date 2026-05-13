@@ -18,13 +18,12 @@ function NotificationBell() {
       // silently fail
     }
   }
-
-  useEffect(() => {
-    if (!isSignedIn) return
-    fetchNotifications()
-    const interval = setInterval(fetchNotifications, 30000)
-    return () => clearInterval(interval)
-  }, [isSignedIn])
+useEffect(() => {
+  if (!isSignedIn) return
+  const timer = setTimeout(fetchNotifications, 1500)
+  const interval = setInterval(fetchNotifications, 30000)
+  return () => { clearTimeout(timer); clearInterval(interval) }
+}, [isSignedIn])
 
   useEffect(() => {
     function handleClickOutside(e) {
