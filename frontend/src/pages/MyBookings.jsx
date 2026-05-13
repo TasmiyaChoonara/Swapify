@@ -11,6 +11,10 @@ function formatSlotTime(isoString) {
   }
 }
 
+function formatDate(isoString) {
+  return new Date(isoString).toLocaleDateString([], { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
+}
+
 const STATUS_BADGE = {
   booked:    { label: 'Booked',    color: 'badge-purple' },
   item_held: { label: 'Item Held', color: 'badge-yellow' },
@@ -50,11 +54,8 @@ function PaymentBreakdown({ tradeId }) {
         </span>
       </div>
       <span style={{
-        display: 'inline-block',
-        padding: '.2rem .6rem',
-        borderRadius: '999px',
-        fontSize: '.75rem',
-        fontWeight: 600,
+        display: 'inline-block', padding: '.2rem .6rem', borderRadius: '999px',
+        fontSize: '.75rem', fontWeight: 600,
         background: isSettled ? 'rgba(34,197,94,.15)' : 'rgba(251,146,60,.15)',
         color: isSettled ? 'rgb(34,197,94)' : 'rgb(251,146,60)',
       }}>
@@ -64,16 +65,13 @@ function PaymentBreakdown({ tradeId }) {
   )
 }
 
-function RatingForm({ booking, currentUserId }) {
+function RatingForm({ transactionId, revieweeDbId, revieweeLabel }) {
   const [score, setScore]         = useState(0)
   const [hover, setHover]         = useState(0)
   const [comment, setComment]     = useState('')
   const [submitted, setSubmitted] = useState(false)
   const [loading, setLoading]     = useState(false)
   const [error, setError]         = useState(null)
-
-  const revieweeClerkId = currentUserId === booking.buyer_id ? booking.seller_id : booking.buyer_id
-  const revieweeLabel   = currentUserId === booking.buyer_id ? 'the seller' : 'the buyer'
 
   if (submitted) {
     return (
@@ -85,24 +83,19 @@ function RatingForm({ booking, currentUserId }) {
 
   async function handleSubmit() {
     if (!score) { setError('Please select a star rating.'); return }
-    if (!booking.transaction_id) { setError('No transaction linked to this booking yet.'); return }
+    if (!transactionId) { setError('No transaction linked yet.'); return }
     setLoading(true)
     setError(null)
     try {
-      // Resolve the Clerk ID to an internal database UUID
-      const userRes = await api.get(`/users/by-clerk/${revieweeClerkId}`)
-      const revieweeDbId = userRes.data?.id
-      if (!revieweeDbId) throw new Error('Could not resolve user.')
-
       await api.post('/ratings', {
-        transaction_id: booking.transaction_id,
+        transaction_id: transactionId,
         reviewee_id:    revieweeDbId,
         score,
         comment: comment.trim() || undefined,
       })
       setSubmitted(true)
     } catch (err) {
-      setError(err.response?.data?.error ?? err.message ?? 'Failed to submit rating.')
+      setError(err.response?.data?.error ?? 'Failed to submit rating.')
     } finally {
       setLoading(false)
     }
@@ -160,17 +153,47 @@ function RatingForm({ booking, currentUserId }) {
   )
 }
 
+function BookingRatingForm({ booking, currentUserId }) {
+  const revieweeClerkId = currentUserId === booking.buyer_id ? booking.seller_id : booking.buyer_id
+  const revieweeLabel   = currentUserId === booking.buyer_id ? 'the seller' : 'the buyer'
+  const [revieweeDbId, setRevieweeDbId] = useState(null)
+
+  useEffect(() => {
+    if (!revieweeClerkId) return
+    api.get(`/users/by-clerk/${revieweeClerkId}`)
+      .then(res => setRevieweeDbId(res.data?.id))
+      .catch(() => {})
+  }, [revieweeClerkId])
+
+  if (!revieweeDbId) return null
+
+  return (
+    <RatingForm
+      transactionId={booking.transaction_id}
+      revieweeDbId={revieweeDbId}
+      revieweeLabel={revieweeLabel}
+    />
+  )
+}
+
 export default function MyBookings() {
   const { isSignedIn, isLoaded, userId } = useAuth()
-  const [bookings, setBookings] = useState([])
-  const [loading, setLoading]   = useState(true)
-  const [error, setError]       = useState(null)
+  const [bookings, setBookings]   = useState([])
+  const [purchases, setPurchases] = useState([])
+  const [loading, setLoading]     = useState(true)
+  const [error, setError]         = useState(null)
 
   useEffect(() => {
     if (!isSignedIn) return
-    api.get('/bookings/mine')
-      .then(res => setBookings(res.data))
-      .catch(() => setError('Failed to load bookings.'))
+    Promise.all([
+      api.get('/bookings/mine'),
+      api.get('/transactions/my-purchases'),
+    ])
+      .then(([bookingsRes, purchasesRes]) => {
+        setBookings(bookingsRes.data)
+        setPurchases(purchasesRes.data)
+      })
+      .catch(() => setError('Failed to load data.'))
       .finally(() => setLoading(false))
   }, [isSignedIn])
 
@@ -181,7 +204,66 @@ export default function MyBookings() {
     <div className="page">
       <div className="container">
 
+        {/* My Purchases */}
         <div className="section-header" style={{ marginTop: '2rem' }}>
+          <h2>My Purchases</h2>
+          {!loading && <span className="result-count">{purchases.length} {purchases.length === 1 ? 'purchase' : 'purchases'}</span>}
+        </div>
+
+        {loading && <div className="spinner" />}
+        {!loading && error && <div className="error-banner">{error}</div>}
+
+        {!loading && !error && purchases.length === 0 && (
+          <div className="empty-state" style={{ marginBottom: '2rem' }}>
+            <h3>No purchases yet</h3>
+            <p>Items you buy will appear here.</p>
+          </div>
+        )}
+
+        {!loading && !error && purchases.length > 0 && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '2rem' }}>
+            {purchases.map(purchase => (
+              <div key={purchase.id} className="detail-card" style={{ display: 'flex', flexDirection: 'column', gap: '.75rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '.5rem' }}>
+                  <div>
+                    <p style={{ fontSize: '.75rem', color: 'var(--text-muted)', marginBottom: '.2rem', textTransform: 'uppercase', letterSpacing: '.05em' }}>
+                      Purchase
+                    </p>
+                    <h3 style={{ color: 'var(--text)', fontSize: '1rem', marginBottom: '.1rem' }}>
+                      {purchase.listing_title}
+                    </h3>
+                    <p style={{ fontSize: '.85rem', color: 'var(--text-muted)' }}>
+                      Seller: {purchase.seller_name}
+                    </p>
+                  </div>
+                  <span className="badge badge-green">Purchased</span>
+                </div>
+
+                <div style={{ display: 'flex', gap: '1.5rem', flexWrap: 'wrap' }}>
+                  <div>
+                    <p style={{ fontSize: '.75rem', color: 'var(--text-muted)', marginBottom: '.1rem' }}>DATE</p>
+                    <p style={{ fontSize: '.9rem', color: 'var(--text)', fontWeight: 500 }}>{formatDate(purchase.created_at)}</p>
+                  </div>
+                  <div>
+                    <p style={{ fontSize: '.75rem', color: 'var(--text-muted)', marginBottom: '.1rem' }}>PRICE</p>
+                    <p style={{ fontSize: '.9rem', color: 'var(--text)', fontWeight: 500 }}>R{parseFloat(purchase.price).toFixed(2)}</p>
+                  </div>
+                </div>
+
+                {purchase.status === 'complete' && (
+                  <RatingForm
+                    transactionId={purchase.id}
+                    revieweeDbId={purchase.seller_db_id}
+                    revieweeLabel="the seller"
+                  />
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* My Trade Bookings */}
+        <div className="section-header" style={{ marginTop: '1rem' }}>
           <h2>My Trade Bookings</h2>
           {!loading && !error && (
             <span className="result-count">
@@ -189,9 +271,6 @@ export default function MyBookings() {
             </span>
           )}
         </div>
-
-        {loading && <div className="spinner" />}
-        {!loading && error && <div className="error-banner">{error}</div>}
 
         {!loading && !error && bookings.length === 0 && (
           <div className="empty-state">
@@ -239,7 +318,7 @@ export default function MyBookings() {
                   {isBuyer && <PaymentBreakdown tradeId={booking.trade_id} />}
 
                   {isComplete && (
-                    <RatingForm booking={booking} currentUserId={userId} />
+                    <BookingRatingForm booking={booking} currentUserId={userId} />
                   )}
 
                   <div style={{ display: 'flex', gap: '.5rem' }}>
