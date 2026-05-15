@@ -295,28 +295,6 @@ export default function ListingDetail() {
 {returningFromPayFast && <PaymentCapture />}
 
           {isSignedIn && isBuyer && (
-            <button
-              onClick={handleSave}
-              disabled={saveLoading}
-              style={{
-                background: 'none',
-                border: '1px solid rgba(255,255,255,.2)',
-                borderRadius: 'var(--radius)',
-                cursor: 'pointer',
-                color: saved ? 'rgb(239,68,68)' : 'var(--text-muted)',
-                fontSize: '.85rem',
-                padding: '6px 12px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                marginBottom: '1rem',
-              }}
-              aria-label={saved ? 'Remove from wishlist' : 'Save to wishlist'}
-            >
-              {saved ? '♥ Saved' : '♡ Save to Wishlist'}
-            </button>
-          )}
-          {isSignedIn && isBuyer && (
             <div className="detail-card" style={{ padding: '.75rem 1rem' }}>
               <p style={{ fontSize: '.85rem', margin: 0, color: 'var(--text)' }}>
                 <span className="badge badge-purple" style={{ marginRight: '.5rem', verticalAlign: 'middle' }}>Buyer</span>
