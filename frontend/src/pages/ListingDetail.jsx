@@ -305,6 +305,29 @@ export default function ListingDetail() {
             </div>
           )}
 
+          {isSignedIn && isBuyer && (
+            <button
+              onClick={handleSave}
+              disabled={saveLoading}
+              style={{
+                background: 'none',
+                border: '1px solid rgba(255,255,255,.2)',
+                borderRadius: 'var(--radius)',
+                cursor: 'pointer',
+                color: saved ? 'rgb(239,68,68)' : 'var(--text-muted)',
+                fontSize: '.85rem',
+                padding: '6px 12px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                marginBottom: '1rem',
+              }}
+              aria-label={saved ? 'Remove from wishlist' : 'Save to wishlist'}
+            >
+              {saved ? '♥ Saved' : '♡ Save to Wishlist'}
+            </button>
+          )}
+
           {isLoaded && isSignedIn && isBuyer && isForSale && listing.status !== 'sold' && !returningFromPayFast && (
             <PaymentPanel listing={listing} />
           )}
