@@ -85,6 +85,10 @@ app.get('/', (req, res) => {
 if (process.env.NODE_ENV === "production") {
   app.use(express.static(path.join(__dirname, '../frontend/dist')));
   app.get('/{*path}', (req, res) => {
+    // Never serve frontend for API routes
+    if (req.path.startsWith('/api/')) {
+      return res.status(404).json({ error: 'Not found' });
+    }
     res.sendFile(path.join(__dirname, '../frontend/dist/index.html'));
   });
 }
