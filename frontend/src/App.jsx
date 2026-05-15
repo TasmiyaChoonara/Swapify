@@ -11,6 +11,8 @@ import PaymentSuccess from './pages/PaymentSuccess'
 import PaymentCancel from './pages/PaymentCancel'
 import BookSlot from './pages/BookSlot'
 import MyBookings from './pages/MyBookings'
+import SavedListings from './pages/SavedListings'
+import MySales from './pages/MySales'
 import StaffDashboard from './pages/StaffDashboard'
 
 function TokenSync() {
@@ -35,6 +37,8 @@ export default function App() {
         <Route path="/payment/success"    element={<PaymentSuccess />} />
         <Route path="/payment/cancel"     element={<PaymentCancel />} />
         <Route path="/book/:trade_id"     element={<BookSlot />} />
+        <Route path="/saved" element={<SavedListings />} />
+        <Route path="/my-sales" element={<MySales />} />
         <Route path="/my-bookings"        element={<MyBookings />} />
         <Route path="/staff" element={<StaffDashboard />} />
       </Routes>
