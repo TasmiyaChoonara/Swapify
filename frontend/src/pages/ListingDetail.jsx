@@ -96,6 +96,8 @@ export default function ListingDetail() {
   const [chatLoading, setChatLoading]             = useState(false)
   const [sellerTradesCount, setSellerTradesCount] = useState(null)
   const [sellerRating, setSellerRating]           = useState(null)
+  const [saved, setSaved]                           = useState(false)
+  const [saveLoading, setSaveLoading]               = useState(false)
   const [sellerThreads, setSellerThreads]         = useState([])
   const [activeSellerThread, setActiveSellerThread] = useState(null)
 
@@ -172,6 +174,35 @@ export default function ListingDetail() {
     } catch (err) {
       setDeleteError(err.response?.data?.error ?? 'Failed to delete listing.')
       setDeleting(false)
+    }
+  }
+
+  // Check if this listing is already saved by current user
+  useEffect(() => {
+    if (!isSignedIn || !id) return
+    api.get('/saved')
+      .then(res => {
+        const savedIds = Array.isArray(res.data) ? res.data.map(s => s.id) : []
+        setSaved(savedIds.includes(id))
+      })
+      .catch(() => {})
+  }, [isSignedIn, id])
+
+  async function handleSave() {
+    if (saveLoading) return
+    setSaveLoading(true)
+    try {
+      if (saved) {
+        await api.delete(`/saved/${id}`)
+        setSaved(false)
+      } else {
+        await api.post(`/saved/${id}`)
+        setSaved(true)
+      }
+    } catch {
+      // silently fail
+    } finally {
+      setSaveLoading(false)
     }
   }
 
@@ -263,6 +294,28 @@ export default function ListingDetail() {
 )}
 {returningFromPayFast && <PaymentCapture />}
 
+          {isSignedIn && isBuyer && (
+            <button
+              onClick={handleSave}
+              disabled={saveLoading}
+              style={{
+                background: 'none',
+                border: '1px solid rgba(255,255,255,.2)',
+                borderRadius: 'var(--radius)',
+                cursor: 'pointer',
+                color: saved ? 'rgb(239,68,68)' : 'var(--text-muted)',
+                fontSize: '.85rem',
+                padding: '6px 12px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                marginBottom: '1rem',
+              }}
+              aria-label={saved ? 'Remove from wishlist' : 'Save to wishlist'}
+            >
+              {saved ? '♥ Saved' : '♡ Save to Wishlist'}
+            </button>
+          )}
           {isSignedIn && isBuyer && (
             <div className="detail-card" style={{ padding: '.75rem 1rem' }}>
               <p style={{ fontSize: '.85rem', margin: 0, color: 'var(--text)' }}>
