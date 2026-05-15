@@ -35,3 +35,14 @@ router.put('/:id',         ...protect, updateListing);
 router.delete('/:id',      ...protect, deleteListing);
 
 module.exports = router;
+
+// US12 — seller views their own expired listings
+router.get('/mine/expired', ...protect, async (req, res) => {
+  try {
+    const listingModel = require('../models/listing');
+    const listings = await listingModel.findExpiredBySeller(req.user.id);
+    res.json(listings);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});

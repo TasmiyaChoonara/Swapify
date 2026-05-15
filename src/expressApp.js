@@ -17,6 +17,7 @@ const threadRoutes = require('./routes/threadRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const ratingsRouter = require('./routes/ratings');
 const notificationsRouter = require('./routes/notifications');
+const savedRouter = require('./routes/saved');
 
 const app = express();
 
@@ -62,6 +63,7 @@ app.use('/api/threads', threadRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/ratings', ratingsRouter);
 app.use('/api/notifications', notificationsRouter);
+app.use('/api/saved', savedRouter);
 
 app.get('/health', async (req, res) => {
   try {

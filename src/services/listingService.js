@@ -20,8 +20,8 @@ function validate({ title, type, condition, status }) {
 }
 
 async function getListings(filters = {}) {
-  const { category, type, condition } = filters;
-  return listingModel.findAll({ category, type, condition });
+  const { category, type, condition, search } = filters;
+  return listingModel.findAll({ category, type, condition, search });
 }
 
 async function getListing(id) {

@@ -15,14 +15,15 @@ const BASE_SELECT = `
   LEFT JOIN users u ON u.id = l.seller_id
 `;
 
-async function findAll({ category, type, condition, status = 'active' } = {}) {
-  const conditions = ['l.status = $1'];
+async function findAll({ category, type, condition, status = 'active', search } = {}) {
+  const conditions = ['l.status = $1', 'l.expires_at > NOW()'];
   const values = [status];
   let i = 2;
 
   if (category) { conditions.push(`l.category = $${i++}`); values.push(category); }
   if (type)     { conditions.push(`l.type = $${i++}`);     values.push(type); }
-  if (condition){ conditions.push(`l.condition = $${i++}`); values.push(condition); }
+  if (condition){ conditions.push(`l.condition = ${i++}`); values.push(condition); }
+  if (search)    { conditions.push(`(l.title ILIKE ${i} OR l.description ILIKE ${i++})`); values.push(`%${search}%`); }
 
   const sql = `
     ${BASE_SELECT}
@@ -52,8 +53,8 @@ async function findBySeller(sellerId) {
 
 async function create({ sellerId, title, description, price, condition, type, category }) {
   const { rows } = await pool.query(
-    `INSERT INTO listings (seller_id, title, description, price, condition, type, category)
-     VALUES ($1, $2, $3, $4, $5, $6, $7)
+    `INSERT INTO listings (seller_id, title, description, price, condition, type, category, expires_at)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, NOW() + INTERVAL '30 days')
      RETURNING *`,
     [sellerId, title, description, price, condition, type, category]
   );
@@ -106,4 +107,12 @@ async function addImage(listingId, imageUrl) {
   return rows[0];
 }
 
-module.exports = { findAll, findById, findBySeller, create, update, updateStatus, addImage, delete: remove };
+async function findExpiredBySeller(sellerId) {
+  const { rows } = await pool.query(
+    `${BASE_SELECT} WHERE l.seller_id = $1 AND l.expires_at <= NOW() GROUP BY l.id, u.name ORDER BY l.expires_at DESC`,
+    [sellerId]
+  );
+  return rows;
+}
+
+module.exports = { findAll, findExpiredBySeller, findById, findBySeller, create, update, updateStatus, addImage, delete: remove };

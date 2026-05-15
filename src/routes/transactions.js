@@ -70,3 +70,23 @@ router.get('/my-purchases', async (req, res) => {
 });
 
 module.exports = router;
+
+// US10 — seller completed sales history
+router.get('/mine/sold', async (req, res) => {
+  try {
+    const { rows } = await pool.query(
+      `SELECT t.*, l.title AS listing_title, l.price, l.category,
+              u.name AS buyer_name, p.online_amount, p.cash_shortfall
+       FROM transactions t
+       JOIN listings l ON l.id = t.listing_id
+       JOIN users u ON u.id = t.buyer_id
+       LEFT JOIN payments p ON p.transaction_id = t.id
+       WHERE l.seller_id = $1 AND t.status = 'complete'
+       ORDER BY t.created_at DESC`,
+      [req.user.id]
+    );
+    res.json(rows);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});

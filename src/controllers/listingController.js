@@ -3,8 +3,8 @@ const listingModel = require('../models/listing');
 
 async function getListings(req, res) {
   try {
-    const { category, type, condition } = req.query;
-    const listings = await listingService.getListings({ category, type, condition });
+    const { category, type, condition, search } = req.query;
+    const listings = await listingService.getListings({ category, type, condition, search });
     res.json(listings);
   } catch (err) {
     res.status(err.status || 500).json({ error: err.message });
