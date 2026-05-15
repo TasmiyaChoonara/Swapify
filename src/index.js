@@ -20,6 +20,8 @@ const messageRoutes = require('./routes/messageRoutes');
 const threadRoutes = require('./routes/threadRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const ratingsRouter = require('./routes/ratings');
+const notificationsRouter = require('./routes/notifications');
+const savedRouter = require('./routes/saved');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -66,8 +68,8 @@ app.use('/api/messages', messageRoutes);
 app.use('/api/threads', threadRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/ratings', ratingsRouter);
-const notificationsRouter = require('./routes/notifications');
 app.use('/api/notifications', notificationsRouter);
+app.use('/api/saved', savedRouter);
 
 app.get('/health', async (req, res) => {
   try {
