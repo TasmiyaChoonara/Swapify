@@ -133,6 +133,17 @@ export default function ListingDetail() {
       .catch(() => {})
   }, [id])
 
+  // Check if this listing is already saved — must be before any early returns
+  useEffect(() => {
+    if (!isSignedIn || !id) return
+    api.get('/saved')
+      .then(res => {
+        const savedIds = Array.isArray(res.data) ? res.data.map(s => s.id) : []
+        setSaved(savedIds.includes(id))
+      })
+      .catch(() => {})
+  }, [isSignedIn, id])
+
   if (loading) return <PageShell><div className="spinner" /></PageShell>
 
   if (error || !listing) return (
@@ -177,16 +188,7 @@ export default function ListingDetail() {
     }
   }
 
-  // Check if this listing is already saved by current user
-  useEffect(() => {
-    if (!isSignedIn || !id) return
-    api.get('/saved')
-      .then(res => {
-        const savedIds = Array.isArray(res.data) ? res.data.map(s => s.id) : []
-        setSaved(savedIds.includes(id))
-      })
-      .catch(() => {})
-  }, [isSignedIn, id])
+
 
   async function handleSave() {
     if (saveLoading) return
