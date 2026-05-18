@@ -31,7 +31,7 @@ export default function SavedListings() {
 
   return (
     <div className="page">
-      <h1 className="page-title">My Saved Listings</h1>
+      <h1 className="page-title">My Wishlist</h1>
 
       {loading && <p className="text-muted">Loading...</p>}
       {error   && <p className="text-danger">{error}</p>}
