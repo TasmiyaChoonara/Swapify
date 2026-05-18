@@ -152,7 +152,7 @@ export default function Navbar() {
                   <Link to="/staff" className="navbar-link">Staff Dashboard</Link>
                 )}
                 <Link to="/my-bookings" className="navbar-link">My Bookings</Link>
-                <Link to="/saved" className="navbar-link">Saved</Link>
+                <Link to="/saved" className="navbar-link">Wishlist</Link>
                 <Link to="/my-sales" className="navbar-link">My Sales</Link>
                 <Link to="/listings/new" className="btn btn-primary btn-sm">
                   + Sell Item
@@ -206,7 +206,7 @@ export default function Navbar() {
                     <Link to="/staff" className="nav-drawer-link" onClick={closeMenu}>Staff Dashboard</Link>
                   )}
                   <Link to="/my-bookings" className="nav-drawer-link" onClick={closeMenu}>My Bookings</Link>
-                  <Link to="/saved" className="nav-drawer-link" onClick={closeMenu}>Saved</Link>
+                  <Link to="/saved" className="nav-drawer-link" onClick={closeMenu}>Wishlist</Link>
                   <Link to="/my-sales" className="nav-drawer-link" onClick={closeMenu}>My Sales</Link>
                   <Link to="/listings/new" className="nav-drawer-link" onClick={closeMenu}>+ Sell Item</Link>
                   <div className="nav-drawer-row">
