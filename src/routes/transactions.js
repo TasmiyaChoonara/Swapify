@@ -60,7 +60,7 @@ router.post('/', async (req, res) => {
 router.get('/my-purchases', async (req, res) => {
   try {
     const { rows } = await pool.query(
-      `SELECT t.*, l.title as listing_title, l.price, l.status as listing_status, u.name as seller_name, u.id as seller_db_id FROM transactions t JOIN listings l ON l.id = t.listing_id JOIN users u ON u.id = l.seller_id WHERE t.buyer_id = $1 AND t.type = 'sale' ORDER BY t.created_at DESC`,
+      `SELECT t.*, l.title as listing_title, l.price, l.status as listing_status, u.name as seller_name, u.id as seller_db_id FROM transactions t JOIN listings l ON l.id = t.listing_id JOIN users u ON u.id = l.seller_id JOIN payments p ON p.transaction_id = t.id WHERE t.buyer_id = $1 AND t.type = 'sale' AND p.status = 'paid' ORDER BY t.created_at DESC`,
       [req.user.id]
     );
     res.json(rows);

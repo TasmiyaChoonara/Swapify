@@ -25,7 +25,7 @@ router.get('/staff/today', attachDbUser, requireRole('staff', 'admin'), async (r
   try {
     const result = await pool.query(
       `SELECT
-         b.*,
+         b.*, buyer.name AS buyer_name, seller.name AS seller_name,
          l.title AS listing_title,
          COALESCE(p.cash_shortfall, 0) AS cash_shortfall,
          COALESCE(p.cash_confirmed, false) AS cash_confirmed,
@@ -34,6 +34,8 @@ router.get('/staff/today', attachDbUser, requireRole('staff', 'admin'), async (r
        LEFT JOIN transactions t  ON t.id = b.trade_id
        LEFT JOIN listings l      ON l.id = t.listing_id
        LEFT JOIN payments p      ON p.transaction_id = t.id
+       LEFT JOIN users buyer ON buyer.id = b.buyer_id
+       LEFT JOIN users seller ON seller.id = b.seller_id
        WHERE b.slot_time::date = CURRENT_DATE
        ORDER BY b.slot_time ASC`
     );

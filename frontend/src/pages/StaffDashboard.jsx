@@ -81,7 +81,7 @@ export default function StaffDashboard() {
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '.875rem' }}>
               <thead>
                 <tr style={{ borderBottom: '1px solid rgba(255,255,255,.1)', textAlign: 'left' }}>
-                  {['Time', 'Item', 'Buyer ID', 'Seller ID', 'Online Paid', 'Cash Due', 'Status', 'Actions'].map(h => (
+                  {['Time', 'Item', 'Buyer', 'Seller', 'Online Paid', 'Cash Due', 'Status', 'Actions'].map(h => (
                     <th key={h} style={{ padding: '.6rem .75rem', color: 'var(--text-muted)', fontWeight: 600, whiteSpace: 'nowrap' }}>{h}</th>
                   ))}
                 </tr>
@@ -95,8 +95,8 @@ export default function StaffDashboard() {
                     <tr key={b.id} style={{ borderBottom: '1px solid rgba(255,255,255,.06)' }}>
                       <td style={{ padding: '.65rem .75rem', whiteSpace: 'nowrap', color: 'var(--text)' }}>{formatTime(b.slot_time)}</td>
                       <td style={{ padding: '.65rem .75rem', color: 'var(--text)' }}>{b.listing_title ?? '—'}</td>
-                      <td style={{ padding: '.65rem .75rem', color: 'var(--text-muted)', fontSize: '.8rem' }}>{b.buyer_id?.slice(0, 14)}…</td>
-                      <td style={{ padding: '.65rem .75rem', color: 'var(--text-muted)', fontSize: '.8rem' }}>{b.seller_id?.slice(0, 14)}…</td>
+                      <td style={{ padding: '.65rem .75rem', color: 'var(--text-muted)', fontSize: '.8rem' }}>{b.buyer_name ?? b.buyer_id?.slice(0, 14)}</td>
+                      <td style={{ padding: '.65rem .75rem', color: 'var(--text-muted)', fontSize: '.8rem' }}>{b.seller_name ?? b.seller_id?.slice(0, 14)}</td>
                       <td style={{ padding: '.65rem .75rem', color: 'var(--text)' }}>R{onlineAmt.toFixed(2)}</td>
                       <td style={{ padding: '.65rem .75rem' }}>
                         {shortfall > 0
