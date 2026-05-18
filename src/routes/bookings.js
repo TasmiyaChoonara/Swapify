@@ -34,8 +34,8 @@ router.get('/staff/today', attachDbUser, requireRole('staff', 'admin'), async (r
        LEFT JOIN transactions t  ON t.id = b.trade_id
        LEFT JOIN listings l      ON l.id = t.listing_id
        LEFT JOIN payments p      ON p.transaction_id = t.id
-       LEFT JOIN users buyer ON buyer.id = b.buyer_id::uuid
-       LEFT JOIN users seller ON seller.id = b.seller_id::uuid
+       LEFT JOIN users buyer ON buyer.clerk_id = b.buyer_id
+       LEFT JOIN users seller ON seller.clerk_id = b.seller_id
        WHERE b.slot_time::date = CURRENT_DATE
        ORDER BY b.slot_time ASC`
     );
