@@ -22,8 +22,8 @@ async function findAll({ category, type, condition, status = 'active', search } 
 
   if (category) { conditions.push(`l.category = $${i++}`); values.push(category); }
   if (type)     { conditions.push(`l.type = $${i++}`);     values.push(type); }
-  if (condition){ conditions.push(`l.condition = ${i++}`); values.push(condition); }
-  if (search)    { conditions.push(`(l.title ILIKE ${i} OR l.description ILIKE ${i++})`); values.push(`%${search}%`); }
+  if (condition){ conditions.push(`l.condition = $${i++}`); values.push(condition); }
+  if (search)    { conditions.push(`(l.title ILIKE $${i} OR l.description ILIKE $${i++})`); values.push(`%${search}%`); }
 
   const sql = `
     ${BASE_SELECT}
