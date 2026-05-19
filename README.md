@@ -1,4 +1,57 @@
 # Swapify
+
+A campus marketplace application for students at the University of the Witwatersrand to buy, sell, and trade items safely on campus.
+
+## Live Application
+
+**Frontend:** https://swapify-frontend-b2h7gvfhhgaka6d7.austriaeast-01.azurewebsites.net
+
+**Backend API:** https://swapify-backend.azurewebsites.net
+
+## Test Credentials
+
+**Student access:**
+Sign up with any email via the Get Started button on the live app.
+
+**Admin/Staff access:**
+- Email: `swapifydemo@gmail.com`
+- Password: `Swapify2026!`
+
+This account has admin and staff access and can view:
+- Admin Panel — user management, analytics, reviews moderation
+- Staff Dashboard — today's bookings, mark received, confirm cash, release item
+
+## Tech Stack
+
+| Layer | Technology |
+|---|---|
+| Frontend | React (Vite), Clerk Auth, Axios, Socket.io |
+| Backend | Node.js, Express |
+| Database | PostgreSQL (Azure Database for PostgreSQL Flexible Server) |
+| Authentication | Clerk |
+| Payments | PayFast (sandbox) |
+| Hosting | Azure App Service (backend), Azure Static Web Apps (frontend) |
+| CI/CD | GitHub Actions |
+| Testing | Jest, Codecov |
+
+## Project Structure
+Swapify/
+├── src/                    # Backend source code
+│   ├── config/             # Database connection
+│   ├── controllers/        # Route controllers
+│   ├── middleware/         # Auth and role middleware
+│   ├── models/             # Database models
+│   ├── routes/             # API routes
+│   └── services/           # Business logic
+├── frontend/               # React frontend
+│   ├── src/
+│   │   ├── components/     # Reusable UI components
+│   │   ├── pages/          # Page components
+│   │   └── services/       # API service calls
+├── migrations/             # SQL migration files
+├── tests/                  # Jest test suites
+└── .github/workflows/      # CI/CD pipelines
+
 ## How to Run Locally
 
 ### Prerequisites
@@ -105,7 +158,10 @@ Every push to `main` triggers the following GitHub Actions workflows:
 
 All Scrum artefacts are available in our Notion workspace:
 
-🔗 **https://www.notion.so/Swapify-33b7c783ca6e8018877bdac8d1ae0bc8**
+ **https://www.notion.so/Swapify-33b7c783ca6e8018877bdac8d1ae0bc8**
+
+All submission documents (PDFs) are available in our Google Drive:
+**https://drive.google.com/drive/folders/1z3tp-nr3OT9hG-QTTDwAygGwsKUZy8IF?usp=sharing**
 
 Includes:
 - Product Backlog (with story points)
