@@ -2,6 +2,9 @@
 
 A campus marketplace application for students at the University of the Witwatersrand to buy, sell, and trade items safely on campus.
 
+## Demo Video
+https://youtu.be/WCCEzhuaCOs?si=adLEcVswgyeJnxyY 
+
 ## Live Application
 
 **Frontend:** https://swapify-frontend-b2h7gvfhhgaka6d7.austriaeast-01.azurewebsites.net
@@ -16,7 +19,7 @@ Sign up with any email via the Get Started button on the live app.
 **Admin/Staff access:**
 - Email: `swapifydemo@gmail.com`
 - Password: `Swapify2026!`
-
+To sign into the gmail account to recieve the varification code sent when signing in with Swapify, use the same credentials as above.
 This account has admin and staff access and can view:
 - Admin Panel — user management, analytics, reviews moderation
 - Staff Dashboard — today's bookings, mark received, confirm cash, release item
@@ -156,19 +159,10 @@ Every push to `main` triggers the following GitHub Actions workflows:
 
 ## Scrum Documentation
 
-All Scrum artefacts are available in our Notion workspace:
+All Scrum artefacts (meetings, task board, UAT's and Product Backlog) are available in our Notion workspace:
 
  **https://www.notion.so/Swapify-33b7c783ca6e8018877bdac8d1ae0bc8**
 
-All submission documents (PDFs) are available in our Google Drive:
+All submission documents including our Tests plan and coverage report, Project Plan, UML diagrams, Sprint Backlogs and Sprint Burndown charts are available in our Google Drive:
 **https://drive.google.com/drive/folders/1z3tp-nr3OT9hG-QTTDwAygGwsKUZy8IF?usp=sharing**
 
-Includes:
-- Product Backlog (with story points)
-- Sprint Backlogs — Sprints 1–4
-- Sprint Meeting Notes (Planning, Standups, Retrospectives, Reviews)
-- Individual Retrospectives
-- UATs (Acceptance Tests)
-- UML Diagrams (Sprints 1–4)
-- CI/CD & Deployment documentation
-- Test Coverage Report
