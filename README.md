@@ -1,6 +1,6 @@
 # Swapify
 
-A campus marketplace application for students at the University of the Witwatersrand to buy, sell, and trade items safely on campus.
+A campus marketplace application for university students to buy, sell, and trade items safely on campus.
 
 ## Demo Video
 https://youtu.be/WCCEzhuaCOs?si=adLEcVswgyeJnxyY 
